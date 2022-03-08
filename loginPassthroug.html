@@ -7,7 +7,7 @@
     async function storeToken(){
         let myTokenForCadPassthroug = await atob(await param("token"));
         await localStorage.setItem("userKey", myTokenForCadPassthroug);
-        Window.close();
+        window.close();
     }
 
     storeToken();
