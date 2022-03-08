@@ -14,8 +14,7 @@
 <script src="./stlViewer/engine/parts/engine-render/renderHandler.js"></script>
 <script src='./stlViewer/engine/engine.js'></script>
 
-<link rel="stylesheet" data-name="vs/editor/editor.main"
-    href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
+<link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs/loader.min.js"></script>
 
@@ -97,15 +96,12 @@
         <button onclick="download(openPartID+openPartRev+'.stl', window.currentSTL);">Export STL</button>
     </div>
     <div class="toolbar2">
-        <button onclick="meshWire.visible = (meshWire.visible === true ? false : true)"
-            style="display: inline-block;">Wireframe</button>
-        <button onclick="meshSolid.visible = (meshSolid.visible === true ? false : true)"
-            style="display: inline-block;">Solid</button>
-        <input id="transparancy" type="range" min=".1" max="1" step=".05" value=".9"
-            oninput="meshSolid.material.opacity = this.value;" style="display: inline-block;height:22px;">
-        <div>
-            <button onclick="doLogin();">Login</button>
-        </div>
+        <button onclick="meshWire.visible = (meshWire.visible === true ? false : true)" style="display: inline-block;">Wireframe</button>
+        <button onclick="meshSolid.visible = (meshSolid.visible === true ? false : true)" style="display: inline-block;">Solid</button>
+        <input id="transparancy" type="range" min=".1" max="1" step=".05" value=".9" oninput="meshSolid.material.opacity = this.value;" style="display: inline-block;height:22px;">
+
+        <button onclick="doLogin();" style="display: inline-block;float:right;">Login</button>
+
     </div>
     <div class="toolbar3">
 
@@ -238,8 +234,8 @@
     }
 
     function goBackToPartPage() {
-        newLocationString = "https://autodrop.cloud";
-        newLocationString = newLocationString.replace("/openscad", "");
+        newLocationString = window.location.href;;
+        newLocationString = newLocationString.replace("https://autodrop.cloud/openscad/", "https://autodrop.cloud/");
         newLocationString = newLocationString.replace("part_editor", "part_details");
 
         window.location.href = newLocationString;
