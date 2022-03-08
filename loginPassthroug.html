@@ -1,0 +1,13 @@
+<script>
+    function param(name) {
+        return (location.search.split(name + '=')[1] || '').split('&')[0];
+    }
+
+
+    async function storeToken(){
+        let myTokenForCadPassthroug = await atob(await param("token"));
+        await localStorage.setItem("userKey", myTokenForCadPassthroug);
+        Window.close();
+    }
+
+</script>

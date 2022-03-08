@@ -1,350 +1,61 @@
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<link id="mainStyleSheet" rel="stylesheet" type="text/css" href="../../../css/mvp.css">
-<link id="mainStyleSheet" rel="stylesheet" type="text/css" href="../../../css/dark.css">
-<link id="tableStyleSheet" rel="stylesheet" type="text/css" href="../../../tabulator/css/bulma/tabulator_bulma.min.css">
-
-<script src="../stlViewer/engine/threejs/three.min.js"></script>
-<script src="../stlViewer/engine/threejs/OrbitControls.js"></script>
-<script src="../stlViewer/engine/threejs/STLLoader.js"></script>
-<script src="../stlViewer/engine/parts/engine-render/sceneHandler.js"></script>
-<script src="../stlViewer/engine/parts/engine-render/renderHandler.js"></script>
-<script src='../stlViewer/engine/engine.js'></script>
-
-<link rel="stylesheet" data-name="vs/editor/editor.main"
-    href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs/loader.min.js"></script>
-
+<title>OpenSCAD Cloud from Autodrop3d</title>
+<link rel="icon" type="image/x-icon" href="logo.png">
+<link id="mainStyleSheet" rel="stylesheet" type="text/css" href="./openscad/css/mvp.css">
+<link id="mainStyleSheet" rel="stylesheet" type="text/css" href="./openscad/css/dark.css">
 
 <style>
     .container {
-        width: 100%;
-        height: 100%;
         display: grid;
-        grid-template-columns: 1.2fr 1.2fr;
-        grid-template-rows: 0.1fr 0.4fr 2.5fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 0.1fr 1fr .1fr;
         gap: 0px 0px;
         grid-auto-flow: row;
         grid-template-areas:
-            "toolbar1 toolbar2"
-            "OpenScadConsole view3d"
-            "openScadCode view3d";
+            "top top"
+            "left right"
+            "footer footer";
     }
 
-    .toolbar1 {
-        grid-area: toolbar1;
+    .footer {
+        grid-area: footer;
     }
 
-    .toolbar2 {
-        grid-area: toolbar2;
+    .top {
+        grid-area: top;
     }
 
-    .openScadCode {
-        grid-area: openScadCode;
+    .left {
+        grid-area: left;
     }
 
-    .view3d {
-        grid-area: view3d;
-    }
-
-    .OpenScadConsole {
-        grid-area: OpenScadConsole;
-        height: 100%;
-    }
-
-
-    .OpenScadConsole {
-        overflow: scroll;
-        grid-area: OpenScadConsole;
-    }
-
-    select:focus,
-    input:focus,
-    textarea:focus {
-        background: white;
-    }
-
-    #canvas-container {
-        width: 97%;
-        height: 99%;
-        border: 1px solid yellow;
+    .right {
+        grid-area: right;
     }
 </style>
 
 
-
 <div class="container">
-    <div class="toolbar1">
-        <button onclick="goBackToPartPage()">◄ Back to part details</button>
-        <button id="Save" onclick="storeOpenSCADfileToCloud();">💾</button>
-        <button id="runOpenSCAD">▶</button>
-        <button onclick="download(openPartID+openPartRev+'.stl', window.currentSTL);">Export STL</button>
+    <div class="top">
+        <H1>OpenSCAD cloud provided by <a href="https://autodrop3d.com">Autodrop3d</a> </H1>
     </div>
-    <div class="toolbar2">
-        <button onclick="meshWire.visible = (meshWire.visible === true ? false : true)"
-            style="display: inline-block;">Wireframe</button>
-        <button onclick="meshSolid.visible = (meshSolid.visible === true ? false : true)"
-            style="display: inline-block;">Solid</button>
-        <input id="transparancy" type="range" min=".1" max="1" step=".05" value=".9"
-            oninput="meshSolid.material.opacity = this.value;" style="display: inline-block;height:22px;">
-    </div>
-    <div class="openScadCode">
-        <div id="monacoEditor" style="height:100%;width:100%;  resize: horizontal;"></div>
-    </div>
-    <div class="view3d">
-        <div id="canvas-container"></div>
-    </div>
-    <div class="OpenScadConsole">
-        <pre id="consoleOutput"></pre>
-    </div>
-</div>
 
 
+    <div class="left">
+        An online editor for OpenSCAD.
+        <br> powered by the WASM port of OpenSCAD by <a href="https: //github.com/DSchroer/openscad-wasm"
+            target="_blank">DSchroer</a>
+        <br><br><br><br>This is a place where you can make and share your openSCAD scripts.<br>
+        To learn more about OpenSCAD see <a href="https://openscad.org/index.html">OpenSCAD.org</a>
+        
+    </div>
+    <div class="right">
+        <div style="text-align: center;">
+            <a href="./openscad/">
+                <img src="./logo.png"></img><br>
+                Open the editor</a>
+        </div>
+    </div>
+    <div class="footer">
 
-<div id="globalDimmScreen" class="modal" onclick="if(event.target.id =='globalModalWindow') ModalWindowClose();">
-    <div class="modal" style="display: block;background:url(../../../../images/loading-2.gif) center center no-repeat;">
     </div>
 </div>
-
-
-
-
-
-
-
-
-<script>
-    apiDomainName = "https://go.autodrop3d.com/";
-    credits = `Credits and acknowledgements:  <a href="https://github.com/DSchroer/openscad-wasm" target="_blank">DSchroer: OpenSCAD wasm port</a>  <a href="https://github.com/ochafik/openscad-wasm/blob/editor-ochafik.com/example/www/openscad-editor-config.js" target="_blank">ochafik: Code highlighting </a>  
-`
-    function param(name) {
-        return (location.search.split(name + '=')[1] || '').split('&')[0];
-    }
-
-
-    openPartID = param("openPartID");
-    openPartRev = param("openPartRev");
-
-    async function doAjax(apiToCall, args) {
-        //reset alert field
-        $("#alert").html("");
-
-        let result;
-
-        try {
-            headersToken = 'Bearer ' + JSON.parse(localStorage.getItem("userKey")).user.token;
-        }
-        catch (error) {
-            headersToken = "";
-        }
-
-        //alert("showing loading screen");
-        $("#globalDimmScreen").show();
-
-        try {
-            result = await $.ajax({
-                url: apiDomainName + apiToCall,
-                dataType: 'json',
-                type: 'post',
-                contentType: 'application/json',
-                data: JSON.stringify(args),
-                processData: false,
-                headers: { "Authorization": headersToken },
-            });
-            //console.log(result);
-            $("#globalDimmScreen").hide();
-            return result;
-
-        }
-        catch (error) {
-            console.error(error);
-            errorJson = error.responseJSON.message;
-            ajaxError = errorJson;
-            console.log(ajaxError);
-            $("#alert").html("Error: " + ajaxError);
-        };
-
-        $("#globalDimmScreen").hide();
-    }
-
-
-    window.coi = {
-        // // A function that is run to decide whether to register the SW or not.
-        // You could for instance make this return a value based on whether you actually need to be cross origin isolated or not.
-        shouldRegister: () => true,
-        // If this function returns true, any existing service worker will be deregistered (and nothing else will happen).
-        shouldDeregister: () => false,
-        // Override this if you want to prompt the user and do reload at your own leisure. Maybe show the user a message saying:
-        // "Click OK to refresh the page to enable <...>"
-        doReload: () => window.location.reload(),
-        // Set to true if you don't want coi to log anything to the console.
-        quiet: false
-    }
-
-
-    if ('serviceWorker' in navigator) {
-        $("#globalDimmScreen").show();
-        navigator.serviceWorker.register('./coi-serviceworker.js');
-        $("#globalDimmScreen").hide();
-    }
-
-
-    $(function () {
-        $('#openScadCodeCodeEditorTextArea').on('keydown', function (e) {
-            if (e.keyCode == 9 || e.which == 9) {
-                e.preventDefault();
-                var s = this.selectionStart;
-                $(this).val(function (i, v) {
-                    return v.substring(0, s) + "\t" + v.substring(this.selectionEnd)
-                });
-                this.selectionEnd = s + 1;
-            }
-        });
-    });
-
-    async function storeOpenSCADfileToCloud() {
-        response = await doAjax('../api/cadFiles/storeCadModelOpenSCAD', {
-            id: openPartID,
-            rev: openPartRev,
-            modelFile: window.editor.getValue(),
-            stlFile: window.currentSTL
-
-        });
-
-        alert(JSON.stringify(response));
-    }
-
-    function goBackToPartPage() {
-        newLocationString = "" + window.location.href;
-        newLocationString = newLocationString.replace("/openscad", "");
-        newLocationString = newLocationString.replace("part_editor", "part_details");
-
-        window.location.href = newLocationString;
-    }
-
-    var meshWire;
-    var meshSolid;
-    Engine.createScene({ containerId: 'canvas-container', showGrid: false });
-
-    async function ShowMeThatStinkingStlFile(currentSTL) {
-        window.currentSTL = currentSTL;
-        SceneHandler.getScene("scene-0").scene.children = [SceneHandler.getScene("scene-0").scene.children[0]];
-
-        const loader = await new THREE.STLLoader;
-        var geometry = await loader.parse(currentSTL);
-
-        meshWire = await new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, }));
-        meshSolid = await new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({ transparent: true, opacity: .95 }));
-
-        meshWire.rotateX(-Math.PI / 2);
-        meshSolid.rotateX(-Math.PI / 2);
-
-        var box = await new THREE.Box3().setFromObject(meshSolid);
-        meshTranslationInY = box.getSize().y / 2;
-        meshWire.translateZ(meshTranslationInY);
-        meshSolid.translateZ(meshTranslationInY);
-
-
-
-        await Engine.addToScene(meshWire, 'scene-0');
-        await Engine.addToScene(meshSolid, 'scene-0');
-    }
-
-    function download(filename, text) {
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
-
-        element.style.display = 'none';
-        document.body.appendChild(element);
-
-        element.click();
-
-        document.body.removeChild(element);
-    }
-
-</script>
-
-
-
-
-
-<script type="module">
-    import OpenScad from "./openscad.js";
-    import { addFonts } from "./openscad.fonts.js";
-
-    import { registerOpenSCADLanguage } from './openscad-editor-config.js'
-
-    async function setUpMonacoEditor() {
-        let currentOpenSCADcode = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
-            id: openPartID, rev: openPartRev
-        });
-        if (currentOpenSCADcode == undefined) currentOpenSCADcode = "";
-
-
-        await require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
-        require(["vs/editor/editor.main"], async () => {
-            await registerOpenSCADLanguage();
-            window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
-                value: await currentOpenSCADcode,
-                language: 'openscad',
-                theme: 'vs-dark',
-            });
-        });
-    }
-
-    await setUpMonacoEditor();
-
-
-
-
-
-
-
-    const openSCADconsoleOutput = document.getElementById("consoleOutput");
-
-
-    async function runAndShowScad() {
-        openSCADconsoleOutput.innerHTML = "" + credits;
-        $("#globalDimmScreen").show();
-        try {
-            const instance = await OpenScad({
-                noInitialRun: true,
-                'print': text => {
-                    //openSCADconsoleOutput.innerHTML += "stdout: " + text + "\n";
-                    openSCADconsoleOutput.innerHTML += text + "\n";
-                },
-                'printErr': text => {
-                    //openSCADconsoleOutput.innerHTML += "stderr: " + text + "\n";
-                    openSCADconsoleOutput.innerHTML += text + "\n";
-                },
-            });
-
-            addFonts(instance);
-
-
-            await instance.FS.writeFile("/input.scad", window.editor.getValue());
-            await instance.callMain(["/input.scad", "-o", "cube.stl"]);
-            const output = await new Blob([await instance.FS.readFile("/cube.stl")]).text();
-            ShowMeThatStinkingStlFile(output);
-        } catch (e) {
-            console.log(e);
-            openSCADconsoleOutput.innerHTML += e;
-            if (e == "ReferenceError: SharedArrayBuffer is not defined") {
-                //alert("Try refreshing page. Service worker first time exicution.");
-                location.reload();
-            }
-
-            if (e == "TypeError: Cannot read properties of undefined (reading 'getValue')") {
-                setTimeout(runAndShowScad(), 3000)
-            }
-        }
-        $("#globalDimmScreen").hide();
-    }
-
-    await runAndShowScad();
-    document.getElementById("runOpenSCAD").onclick = function () { runAndShowScad() };
-</script>
