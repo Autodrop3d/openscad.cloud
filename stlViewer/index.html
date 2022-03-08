@@ -1,0 +1,22 @@
+<div id="renderer"></div>
+
+
+<!-- must be included in this order -->
+<script src="./deps/jquery.js"></script>
+<script src="./engine/threejs/three.min.js"></script>
+<script src="./engine/threejs/OrbitControls.js"></script>
+<!-- <script src="./engine/threejs/STLLoader.js"></script> -->
+<script src="./engine/parts/engine-render/sceneHandler.js"></script>
+<script src="./engine/parts/engine-render/renderHandler.js"></script>
+<script src='./engine/engine.js'></script>
+
+<script>
+	Engine.createScene({ containerId: 'renderer', showGrid: true });
+</script>
+
+
+<style>
+	#renderer {
+		height: 100%;
+	}
+</style>

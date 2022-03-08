@@ -1,0 +1,16 @@
+#content-container {
+	height: calc(100vh - 16px);
+}
+
+#controls {
+	width: 30vw;
+	height: 30vh;
+	position:absolute;
+	background:white;
+	padding:5px 5px;
+}
+
+#canvas-container {
+	height: 100%;
+	width: 100%;
+}
