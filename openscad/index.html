@@ -232,9 +232,14 @@
         },
     ];
 
-    if (sharedFileLink) {
-        virtualFileSystem = JSON.parse(  atob(sharedFileLink));
+    try{
+        if (sharedFileLink) {
+            virtualFileSystem = JSON.parse(atob(sharedFileLink));
+        }
+    }catch(e){
+console.log(e);
     }
+
 
     var currentVirtualFileName = "main.scad";
 
