@@ -410,14 +410,7 @@
 
     async function setUpMonacoEditor() {
         await require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
-        await require(["vs/editor/editor.main"], async () => {
-            await registerOpenSCADLanguage();
-            window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
-                value: "",
-                language: 'openscad',
-                theme: 'vs-dark',
-            });
-        });
+
 
 
         let codeFromServerSide = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
@@ -431,8 +424,15 @@
             }
         }
         await updateFileSelector("main.scad");
-        await showFileInEditor();
-
+        //await showFileInEditor();
+        await require(["vs/editor/editor.main"], async () => {
+            await registerOpenSCADLanguage();
+            window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
+                value: virtualFileSystem[0].txt,
+                language: 'openscad',
+                theme: 'vs-dark',
+            });
+        });
 
         window.firstRenderDone == true;
     }
