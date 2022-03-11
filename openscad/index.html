@@ -94,6 +94,7 @@
         <button id="Save" onclick="storeOpenSCADfileToCloud();">💾</button>
         <button id="runOpenSCAD">▶</button>
         <button onclick="download(openPartID+openPartRev+'.stl', window.currentSTL);">Export STL</button>
+        <button onclick="makeShareLink();">Share Link</button>
     </div>
     <div class="toolbar2">
         <button onclick="meshWire.visible = (meshWire.visible === true ? false : true)" style="display: inline-block;">Wireframe</button>
@@ -151,6 +152,9 @@
 
     openPartID = param("openPartID");
     openPartRev = param("openPartRev");
+    sharedFileLink = param("sharedFileLink");
+
+
 
     window.firstRenderDone = false;
 
@@ -228,6 +232,9 @@
         },
     ];
 
+    if (sharedFileLink) {
+        virtualFileSystem = JSON.parse(  atob(sharedFileLink));
+    }
 
     var currentVirtualFileName = "main.scad";
 
@@ -264,7 +271,7 @@
             await virtualFileSystem.push({ name: myNewFileName, txt: "  " });
             currentVirtualFileName = myNewFileName;
             await window.editor.getModel().setValue("");
-            
+
         } else {
             alert("File with name '" + myNewFileName + "' already exists")
         }
@@ -346,8 +353,29 @@
     }
 
 
+
+
+    async function makeShareLink() {
+        const stringForURL = await btoa(await JSON.stringify(virtualFileSystem));
+        copyToClipboard(window.location.hostname + window.location.pathname + "?&sharedFileLink=" + stringForURL);
+    }
+
+
+    function copyToClipboard(text) {
+        var dummy = document.createElement("textarea");
+        // to avoid breaking orgain page when copying more words
+        // cant copy when adding below this code
+        // dummy.style.display = 'none'
+        document.body.appendChild(dummy);
+        //Be careful if you use texarea. setAttribute('value', value), which works with "input" does not work with "textarea". – Eduard
+        dummy.value = text;
+        dummy.select();
+        document.execCommand("copy");
+        document.body.removeChild(dummy);
+    }
+
     function goBackToPartPage() {
-        newLocationString = window.location.href;;
+        newLocationString = window.location.href;
         newLocationString = newLocationString.replace("https://openscad.cloud/openscad/", "https://autodrop.cloud/");
         newLocationString = newLocationString.replace("part_editor", "part_details");
 
