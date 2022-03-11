@@ -233,23 +233,19 @@
 
 
 
-    $("#fileSelector").change(showFileInEditor());
+    $("#fileSelector").change(
+        function () {
+            showFileInEditor();
+        }
+    );
 
 
     async function showFileInEditor() {
-        //alert(currentVirtualFileName);
         await saveCurrentFileToVirtualFileSystem();
-        //alert(currentVirtualFileName);
         currentVirtualFileName = await $('#fileSelector').val() + "";
-
-        // alert(currentVirtualFileName);
-
         await virtualFileSystem.forEach(async (item, index) => {
-
             if (item.name == currentVirtualFileName) {
-                //alert(item.name + " " + currentVirtualFileName);
-                //alert(item.txt);
-                window.editor.getModel().setValue(item.txt);;
+                await window.editor.getModel().setValue(item.txt);
             }
         });
 
@@ -258,19 +254,23 @@
 
     async function createFile() {
         await saveCurrentFileToVirtualFileSystem();
-        const myNewFileName = prompt("New file name", "newFile.scad");
+        const myNewFileName = await prompt("New file name", "newFile.scad");
         var fileExists = false;
         await virtualFileSystem.forEach(async (item, index) => {
             if (myNewFileName == item.name) fileExists = true;
         });
 
         if (fileExists == false) {
-            virtualFileSystem.push({ name: myNewFileName, txt: "" })
+            await virtualFileSystem.push({ name: myNewFileName, txt: "  " });
+            currentVirtualFileName = myNewFileName;
+            await window.editor.getModel().setValue("");
+            
         } else {
             alert("File with name '" + myNewFileName + "' already exists")
         }
 
-        updateFileSelector(myNewFileName);
+        await updateFileSelector(myNewFileName);
+        await showFileInEditor();
     }
 
 
