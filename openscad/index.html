@@ -472,10 +472,10 @@
 
             window.firstRenderDone == true;
             console.log(await instance.callMain(["/main.scad", "-o", "cube.stl",
-                "--enable=fast-csg",
-                // "--enable=fast-csg-trust-corefinement",
-                // "--enable=fast-csg-remesh",
-                // "--enable=lazy-union"
+                // "--enable=fast-csg",
+                //  "--enable=fast-csg-trust-corefinement",
+                //  "--enable=fast-csg-remesh",
+                //  "--enable=lazy-union"
             ]));
             const output = await new Blob([await instance.FS.readFile("/cube.stl")]).text();
             ShowMeThatStinkingStlFile(output);
