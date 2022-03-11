@@ -25,7 +25,7 @@
         height: 100%;
         display: grid;
         grid-template-columns: 1.2fr 1.2fr;
-        grid-template-rows: 0.1fr 0.2fr 2.3fr 0.4fr;
+        grid-template-rows: 0.1fr 0.1fr 2.3fr 0.4fr;
         gap: 0px 0px;
         grid-auto-flow: row;
         grid-template-areas:
@@ -105,11 +105,12 @@
     </div>
     <div class="toolbar3">
 
-        <select class="toolBarItem">
+        <select id="fileSelector" class="toolBarItem">
             <option>main.scad</option>
         </select>
-        <button class="toolBarItem">＋</button><button class="toolBarItem">🗑</button><br>
-        File Name:<input class="toolBarItem"></input>
+        <button onclick="createFile();" class="toolBarItem">＋</button>
+        <button onclick="deleteFile();" class="toolBarItem">🗑</button>
+        <button onclick="renameFile();" class="toolBarItem">Rename</button>
 
     </div>
     <div class="openScadCode">
@@ -150,6 +151,8 @@
 
     openPartID = param("openPartID");
     openPartRev = param("openPartRev");
+
+    window.firstRenderDone = false;
 
     async function doAjax(apiToCall, args) {
         //reset alert field
@@ -194,20 +197,6 @@
     }
 
 
-    window.coi = {
-        // // A function that is run to decide whether to register the SW or not.
-        // You could for instance make this return a value based on whether you actually need to be cross origin isolated or not.
-        shouldRegister: () => true,
-        // If this function returns true, any existing service worker will be deregistered (and nothing else will happen).
-        shouldDeregister: () => false,
-        // Override this if you want to prompt the user and do reload at your own leisure. Maybe show the user a message saying:
-        // "Click OK to refresh the page to enable <...>"
-        doReload: () => window.location.reload(),
-        // Set to true if you don't want coi to log anything to the console.
-        quiet: false
-    }
-
-
     $(function () {
         $('#openScadCodeCodeEditorTextArea').on('keydown', function (e) {
             if (e.keyCode == 9 || e.which == 9) {
@@ -225,13 +214,137 @@
         response = await doAjax('../api/cadFiles/storeCadModelOpenSCAD', {
             id: openPartID,
             rev: openPartRev,
-            modelFile: window.editor.getValue(),
+            modelFile: JSON.stringify(virtualFileSystem),
             stlFile: window.currentSTL
 
         });
 
         alert(JSON.stringify(response));
     }
+
+    var virtualFileSystem = [
+        {
+            name: "main.scad", txt: ""
+        },
+    ];
+
+
+    var currentVirtualFileName = "main.scad";
+
+
+
+    $("#fileSelector").change(showFileInEditor());
+
+
+    async function showFileInEditor() {
+        //alert(currentVirtualFileName);
+        await saveCurrentFileToVirtualFileSystem();
+        //alert(currentVirtualFileName);
+        currentVirtualFileName = await $('#fileSelector').val() + "";
+
+        // alert(currentVirtualFileName);
+
+        await virtualFileSystem.forEach(async (item, index) => {
+
+            if (item.name == currentVirtualFileName) {
+                //alert(item.name + " " + currentVirtualFileName);
+                //alert(item.txt);
+                window.editor.getModel().setValue(item.txt);;
+            }
+        });
+
+    }
+
+
+    async function createFile() {
+        await saveCurrentFileToVirtualFileSystem();
+        const myNewFileName = prompt("New file name", "newFile.scad");
+        var fileExists = false;
+        await virtualFileSystem.forEach(async (item, index) => {
+            if (myNewFileName == item.name) fileExists = true;
+        });
+
+        if (fileExists == false) {
+            virtualFileSystem.push({ name: myNewFileName, txt: "" })
+        } else {
+            alert("File with name '" + myNewFileName + "' already exists")
+        }
+
+        updateFileSelector(myNewFileName);
+    }
+
+
+    async function deleteFile() {
+
+        const fileNameToRemove = currentVirtualFileName;
+        if (fileNameToRemove == "main.scad") {
+            alert("Can not delete 'main.scad'");
+            return
+        }
+
+        var indexOfItemToRemove;
+        await virtualFileSystem.forEach(async (item, index) => {
+            if (item.name == fileNameToRemove) indexOfItemToRemove = index;
+        });
+
+        if (indexOfItemToRemove && await confirm("Are you sure you want to delete '" + fileNameToRemove + "'?")) {
+            virtualFileSystem.splice(indexOfItemToRemove, 1);
+            currentVirtualFileName = "main.scad";
+        }
+
+
+        updateFileSelector();
+    }
+
+
+    async function renameFile() {
+        await saveCurrentFileToVirtualFileSystem();
+        const fileNameToRename = currentVirtualFileName;
+        const newFileName = prompt("New file name", fileNameToRename);
+
+        if (newFileName) {
+            await virtualFileSystem.forEach(await async function (item, index) {
+                if (item.name == fileNameToRename) item.name = newFileName;
+            });
+            updateFileSelector(newFileName);
+        }
+
+    }
+
+
+    async function updateFileSelector(fileToSelect = undefined) {
+        if (fileToSelect !== undefined) {
+            currentVirtualFileName = fileToSelect;
+        }
+
+
+        await $('#fileSelector').children().remove();
+        await virtualFileSystem.forEach(async (item, index) => {
+            await $('#fileSelector').append(await $('<option>', {
+                value: item.name,
+                text: item.name,
+            }));
+        });
+        //await $('#fileSelector').val(currentVirtualFileName);
+        document.getElementById("fileSelector").value = currentVirtualFileName;//= currentVirtualFileName;
+        //alert(await $('#fileSelector').val());
+    }
+
+    updateFileSelector();
+
+
+
+    async function saveCurrentFileToVirtualFileSystem() {
+        await virtualFileSystem.forEach(async (item, index) => {
+
+            if (item.name == currentVirtualFileName) {
+
+                item.txt = await window.editor.getValue();
+                //alert(item.txt)
+            }
+        });
+    }
+
 
     function goBackToPartPage() {
         newLocationString = window.location.href;;
@@ -267,6 +380,7 @@
 
         await Engine.addToScene(meshWire, 'scene-0');
         await Engine.addToScene(meshSolid, 'scene-0');
+        window.firstRenderDone = true;
     }
 
     function download(filename, text) {
@@ -295,21 +409,31 @@
     import { registerOpenSCADLanguage } from './openscad-editor-config.js'
 
     async function setUpMonacoEditor() {
-        let currentOpenSCADcode = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
-            id: openPartID, rev: openPartRev
-        });
-        if (currentOpenSCADcode == undefined) currentOpenSCADcode = "";
-
-
         await require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
-        require(["vs/editor/editor.main"], async () => {
+        await require(["vs/editor/editor.main"], async () => {
             await registerOpenSCADLanguage();
             window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
-                value: await currentOpenSCADcode,
+                value: "",
                 language: 'openscad',
                 theme: 'vs-dark',
             });
         });
+
+
+        let codeFromServerSide = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
+            id: openPartID, rev: openPartRev
+        });
+        if (codeFromServerSide !== undefined) {
+            try {
+                virtualFileSystem = await JSON.parse(codeFromServerSide);
+            } catch (e) {
+                virtualFileSystem[0].txt = codeFromServerSide;
+            }
+        }
+        showFileInEditor();
+
+
+        window.firstRenderDone == true;
     }
 
     await setUpMonacoEditor();
@@ -324,43 +448,44 @@
 
 
     async function runAndShowScad() {
+        await saveCurrentFileToVirtualFileSystem();
         openSCADconsoleOutput.innerHTML = "" + credits;
         $("#globalDimmScreen").show();
         try {
             const instance = await OpenScad({
                 noInitialRun: true,
                 'print': text => {
-                    //openSCADconsoleOutput.innerHTML += "stdout: " + text + "\n";
                     openSCADconsoleOutput.innerHTML += text + "\n";
                 },
                 'printErr': text => {
-                    //openSCADconsoleOutput.innerHTML += "stderr: " + text + "\n";
                     openSCADconsoleOutput.innerHTML += text + "\n";
                 },
             });
 
             addFonts(instance);
 
+            await virtualFileSystem.forEach(async (item, index) => {
+                await instance.FS.writeFile("/" + item.name, item.txt);
+            });
 
-            await instance.FS.writeFile("/input.scad", window.editor.getValue());
-            await instance.callMain(["/input.scad", "-o", "cube.stl"]);
+
+            window.firstRenderDone == true;
+            await instance.callMain(["/main.scad", "-o", "cube.stl"]);
             const output = await new Blob([await instance.FS.readFile("/cube.stl")]).text();
             ShowMeThatStinkingStlFile(output);
         } catch (e) {
             console.log(e);
             openSCADconsoleOutput.innerHTML += e;
-            if (e == "ReferenceError: SharedArrayBuffer is not defined") {
-                //alert("Try refreshing page. Service worker first time exicution.");
-                location.reload();
-            }
+
 
             if (e == "TypeError: Cannot read properties of undefined (reading 'getValue')") {
                 setTimeout(runAndShowScad(), 3000)
             }
         }
+
         $("#globalDimmScreen").hide();
     }
 
-    await runAndShowScad();
+    //await runAndShowScad();
     document.getElementById("runOpenSCAD").onclick = function () { runAndShowScad() };
 </script>
