@@ -430,7 +430,8 @@
                 virtualFileSystem[0].txt = codeFromServerSide;
             }
         }
-        showFileInEditor();
+        await updateFileSelector("main.scad");
+        await showFileInEditor();
 
 
         window.firstRenderDone == true;
