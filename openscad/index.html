@@ -362,7 +362,7 @@
 
     async function makeShareLink() {
         const stringForURL = await btoa(await JSON.stringify(virtualFileSystem));
-        copyToClipboard(window.location.hostname + window.location.pathname + "?&sharedFileLink=" + stringForURL);
+        copyToClipboard("https://" + window.location.hostname + window.location.pathname + "?&sharedFileLink=" + stringForURL);
     }
 
 
