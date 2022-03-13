@@ -447,8 +447,17 @@
         alert("Text copied to clip board.");
     }
 
-    function goBackToPartPage() {
+    async function goBackToPartPage() {
+        urlForTheBrowserWindow = "/?" +
+            "&CurrentBodyDiv=CurrentToolBarDiv=part" +
+            "&CurrentToolBarDiv=part" +
+            "&currentDivs=part" +
+            "&openPartID=" + openPartID +
+            "&openPartRev=" + openPartRev;
         newLocationString = window.location.href;
+
+        await window.history.pushState('page2', 'Title', urlForTheBrowserWindow);
+
         newLocationString = newLocationString.replace("https://openscad.cloud/openscad/", "https://autodrop.cloud/");
         newLocationString = newLocationString.replace("part_editor", "part_details");
 
