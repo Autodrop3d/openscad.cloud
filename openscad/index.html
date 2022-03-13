@@ -448,20 +448,15 @@
     }
 
     async function goBackToPartPage() {
-        urlForTheBrowserWindow = "/?" +
+        urlForTheBrowserWindow = "https://autodrop.cloud" +
+            "/?" +
             "&CurrentBodyDiv=CurrentToolBarDiv=part" +
             "&CurrentToolBarDiv=part" +
             "&currentDivs=part" +
             "&openPartID=" + openPartID +
             "&openPartRev=" + openPartRev;
-        newLocationString = window.location.href;
-
-        await window.history.pushState('page2', 'Title', urlForTheBrowserWindow);
-
-        newLocationString = newLocationString.replace("https://openscad.cloud/openscad/", "https://autodrop.cloud/");
-        newLocationString = newLocationString.replace("part_editor", "part_details");
-
-        window.location.href = newLocationString;
+        alert(urlForTheBrowserWindow);
+        window.location.href = urlForTheBrowserWindow;
     }
 
     var meshWire;
