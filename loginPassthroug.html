@@ -6,8 +6,13 @@
 
     async function storeToken(){
         let myTokenForCadPassthroug = await atob(await param("token"));
-        await localStorage.setItem("userKey", myTokenForCadPassthroug);
-        window.close();
+        if (myTokenForCadPassthroug !== null){
+            await localStorage.setItem("userKey", myTokenForCadPassthroug);
+            window.close();
+        }else{
+            window.location.href = "https://autodrop.cloud";
+        }
+
     }
 
     storeToken();
