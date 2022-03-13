@@ -6,10 +6,12 @@
 
     async function storeToken(){
         let myTokenForCadPassthroug = await atob(await param("token"));
-        if (myTokenForCadPassthroug !== null){
+        
+        if (myTokenForCadPassthroug !== ""){
             await localStorage.setItem("userKey", myTokenForCadPassthroug);
             window.close();
         }else{
+            alert("Please login or create a user account \n Click Login again from OpenSCAD.cloud after account created or logged in.");
             window.location.href = "https://autodrop.cloud";
         }
 
