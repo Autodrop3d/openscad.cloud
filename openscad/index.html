@@ -470,8 +470,33 @@
         const loader = await new THREE.STLLoader;
         var geometry = await loader.parse(currentSTL);
 
+        //check old mesh setting visibility
+        let oldMeshSettings = {
+            meshWire: {},
+            meshSolid: {},
+        };
+        try {
+            oldMeshSettings.meshWire.visible = meshWire.visible;
+            oldMeshSettings.meshSolid.visible = meshSolid.visible;
+            oldMeshSettings.meshSolid.opacity = meshSolid.material.opacity;
+            oldMeshSettings = await JSON.parse(await JSON.stringify(oldMeshSettings));
+
+        } catch (e) {
+            console.log(e);
+            oldMeshSettings = undefined;
+        }
+        //alert(JSON.stringify(oldMeshSettings));
+
+
         meshWire = await new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, }));
         meshSolid = await new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({ transparent: true, opacity: .95 }));
+
+        if (oldMeshSettings) {
+
+            meshWire.visible = oldMeshSettings.meshWire.visible;
+            meshSolid.visible = oldMeshSettings.meshSolid.visible;
+            meshSolid.material.opacity = oldMeshSettings.meshSolid.opacity;
+        }
 
         meshWire.rotateX(-Math.PI / 2);
         meshSolid.rotateX(-Math.PI / 2);
