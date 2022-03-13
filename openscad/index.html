@@ -112,7 +112,7 @@
         <button onclick="meshSolid.visible = (meshSolid.visible === true ? false : true)" style="display: inline-block;">Solid</button>
         <input id="transparancy" type="range" min=".1" max="1" step=".05" value=".9" oninput="meshSolid.material.opacity = this.value;" style="display: inline-block;height:22px;">
 
-        <button onclick="doLogin();" style="display: inline-block;float:right;">Login</button>
+        <button onclick="doLogin();" style="float:right;">Login</button>
 
     </div>
     <div class="toolbar3">
@@ -164,6 +164,7 @@
     openPartID = param("openPartID");
     openPartRev = param("openPartRev");
     sharedFileLink = param("sharedFileLink");
+    CurrentOrgID = "";
 
 
 
@@ -234,7 +235,62 @@
 
         });
 
-        alert(JSON.stringify(response));
+        if (response == undefined) {
+            alert("save failed");
+            CurrentUserID = await JSON.parse(await localStorage.getItem("userKey")).user._id;
+
+            //const usersGroups = (await doAjax('../api/organizations/usersOrg', { userID: CurrentUserID }))[0]._id;
+            //alert(await JSON.stringify(usersGroups));
+            CurrentOrgID = (await doAjax('../api/organizations/usersOrg', { userID: CurrentUserID }))[0]._id;
+            await createNewPart();
+            storeOpenSCADfileToCloud();
+
+        } else {
+            alert(JSON.stringify(response));
+        }
+
+
+    }
+
+    async function createNewPart() {
+        partsQuery = {
+            Name: "New Part Name",
+            organizationID: CurrentOrgID
+        };
+
+        partsQuery.Name = prompt("Enter new part name", partsQuery.Name);
+
+        if (partsQuery.Name == null) return;
+
+        const makingThatNewPart = await doAjax('../api/cadFiles/create', partsQuery);
+
+        openPartRev = 1;
+        openPartID = makingThatNewPart._id;
+
+        //await alert(openPartID);
+
+
+        try {
+            propertiesToReadReturn = await JSON.parse(await doAjax('../api/cadFiles/returnProperties', {
+                id: openPartID,
+                rev: openPartRev,
+            }));
+
+
+            propertiesToReadReturn.modelingMethod = "OPENSCAD";
+
+
+            propertiesToSave = {};
+            propertiesToSave = {
+                id: openPartID,
+                rev: openPartRev,
+                SettingsFile: propertiesToReadReturn
+            };
+            await doAjax('../api/cadFiles/storeProperties', propertiesToSave);
+        } catch (err) {
+            alert("Failed setting openSCAD as modeling method")
+        }
+
     }
 
     var virtualFileSystem = [
