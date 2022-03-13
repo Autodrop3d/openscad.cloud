@@ -104,7 +104,7 @@
         <button onclick="goBackToPartPage()">◄ Back to part details</button>
         <button id="Save" onclick="storeOpenSCADfileToCloud();">💾</button>
         <button id="runOpenSCAD">▶</button>
-        <button onclick="download(openPartID+openPartRev+'.stl', window.currentSTL);">Export STL</button>
+        <button onclick="download('export-'+ openPartID+openPartRev+'.stl', window.currentSTL);">Export STL</button>
         <button onclick="makeShareLink();">Share Link</button>
     </div>
     <div class="toolbar2">
@@ -515,9 +515,8 @@
 
     function download(filename, text) {
         var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        element.setAttribute('download', filename);
-
+        element.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+        element.download = filename;
         element.style.display = 'none';
         document.body.appendChild(element);
 
