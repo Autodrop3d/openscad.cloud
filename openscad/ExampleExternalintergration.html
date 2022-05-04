@@ -1,0 +1,13 @@
+<script>
+    async function openArbitrarySCAD() {
+        let virtualFileSystem = [];
+        virtualFileSystem.push({
+            name: "main.scad",
+            txt: "cube(size = [50, 50, 50], center = true);"
+        });
+        const stringForURL = await btoa(await JSON.stringify(virtualFileSystem));
+        window.open("https://OpenSCAD.cloud/openscad/?&sharedFileLink=" + stringForURL);
+    }
+
+    openArbitrarySCAD();
+</script>
