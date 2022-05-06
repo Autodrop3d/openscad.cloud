@@ -621,7 +621,12 @@
             addFonts(instance);
 
             await virtualFileSystem.forEach(async (item, index) => {
-                await instance.FS.writeFile("/" + item.name, item.txt);
+                if (configuratorString !=="" && item.name=="main.scad"){
+                    await instance.FS.writeFile("/" + item.name, item.txt +'\r\n' + configuratorString);
+                }else{
+                    await instance.FS.writeFile("/" + item.name, item.txt);
+                }
+                
             });
 
 
@@ -632,14 +637,6 @@
             openSCADarguments.push("/main.scad");
             openSCADarguments.push("-o");
             openSCADarguments.push("cube.stl");
-
-            if (configuratorString !== "") {
-                openSCADarguments.push("--enable=customizer");
-                openSCADarguments.push("-p");
-                openSCADarguments.push("/custom.json");
-                await instance.FS.writeFile("/custom.json", configuratorString);
-
-            }
 
             console.log(await instance.callMain(openSCADarguments));
             const output = await new Blob([await instance.FS.readFile("/cube.stl")]).text();
@@ -825,8 +822,9 @@
     }
 
     async function generate_param_string() {
-        alert("doingThatThing");
+        //alert("doingThatThing");
         $('#configurator').hide();
+
         let parameterSet = { "parameterSets": { "FirstSet": {} } }
 
         let IDString = ''
@@ -839,7 +837,7 @@
             types = ddbList[i].types;
             options = ddbList[i].options;
             for (j = 0; j < types.length; j++) {
-                valString = ''
+                valString += varNames[j] + ' = '
                 if (values[j].length > 1) valString += '['
                 if (types[j] == 'checkbox') valString += document.getElementById(id + '_input_0').checked
                 else if (types[j] == 'labelled') {
@@ -848,7 +846,7 @@
                         tmp = document.getElementById(IDString).value
                         for (l = 0; l < options[j].length; l++) {
                             if (options[j][k][1] == tmp) {
-                                valString += options[j][k][0]
+                                valString += '"' + options[j][k][0] + '"'
                                 break
                             }
                         }
@@ -858,22 +856,27 @@
                 else {
                     for (k = 0; k < values[j].length; k++) {
                         IDString = id + '_input_' + k
-                        valString += document.getElementById(IDString).value
+                        tmp = document.getElementById(IDString).value
+                        if (isNaN(tmp)) valString += '"' + tmp + '"'
+                        else valString += tmp
                         if (k != values[j].length - 1) valString += ', '
                     }
                 }
                 if (values[j].length > 1) valString += ']'
+                valString += ';\n'
 
-                parameterSet["parameterSets"]["FirstSet"][varNames[j]] = valString
+                // parameterSet["parameterSets"]["FirstSet"][varNames[j]] = valString
 
                 id++
             }
         }
 
-        console.log(JSON.stringify(parameterSet))
-        alert(JSON.stringify(parameterSet))
-        configuratorString = await JSON.stringify(parameterSet);
-
+        // console.log(JSON.stringify(parameterSet))
+        configuratorString = valString;
+        await alert(valString);
+        
+        document.getElementById("runOpenSCAD").click();
+        
     }
 
     function parse_line(line) {
