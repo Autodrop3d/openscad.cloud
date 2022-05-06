@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>An OpenSCAD customizer UI</title>
+</head>
+
+<script>
+    STYLE = 'width: 4em; margin-left: 1em;'     //  Style of the input text fields
+
+    openStrongTag = ''
+    openTags = []
+
+    tag = ''
+    word = ''
+    inTags = false
+    elems = []
+
+    state = 'none'
+    ddbName = ''
+    comment = ''
+    varName = ''
+    value = []
+    options = []
+    type = ''
+
+    ddbDivs = []
+    id = 0
+
+    class DdbDiv {
+        constructor(name) {
+            this.name = name
+            this.varNames = []
+            this.comments = []
+            this.values = []
+            this.options = []
+            this.types = []
+
+            this.html = ''
+
+            this.default = ''
+        }
+
+        addElement(varName_, comment_, value_, options_, type_) {
+            this.varNames.push(varName_)
+            this.comments.push(comment_)
+            this.values.push(value_)
+            this.options.push(options_)
+            this.types.push(type_)
+        }
+
+        show() {
+            let IDstring = ''
+            this.html = '<div id="' + id + '">\n\t<h1>' + this.name + '</h1>'
+            for (i = 0; i < this.varNames.length; i++) {
+                let min = 0, max = 0, value = 0, step = 0, k = 0
+
+                this.html += '<b>' + this.varNames[i] + '</b><br /><i>' + this.comments[i] + '</i><br />'
+
+                switch (this.types[i]) {
+                    case 'normal':
+                        for (j = 0; j < this.values[i].length; j++) {
+                            IDstring = id + '_input_' + j
+                            this.html += '<input id="' + IDstring + '" type="number" value=' + this.values[i][j] + ' step="' + getStep(this.values[i][j]) + '" style="' + STYLE + '"></input>'
+                        }
+                        break
+                    case 'combobox':
+                        for (j = 0; j < this.values[i].length; j++) {
+                            IDstring = id + '_input_' + j
+                            this.html += '<select id="' + IDstring + '" style="' + STYLE + '">'
+                            this.html += '<option value="' + this.values[i][j] + '" hidden>' + this.values[i][j] + '</option>'
+                            for (k = 0; k < this.options[i].length; k++) this.html += '<option value="' + this.options[i][k] + '">' + this.options[i][k] + '</option>'
+                            this.html += '</select>'
+                        }
+                        break
+                    case 'labelled':
+                        for (j = 0; j < this.values[i].length; j++) {
+                            IDstring = id + '_input_' + j
+                            this.default = this.options[i][0][1]
+                            for (k = 0; k < this.options[i].length; k++) if (this.values[i][j] == this.options[i][k][0]) this.default = this.options[i][k][1]
+
+                            this.html += '<select id="' + IDstring + '" style="' + STYLE + '">'
+                            this.html += '<option value="' + this.default + '" hidden>' + this.default + '</option>'
+                            for (k = 0; k < this.options[i].length; k++) this.html += '<option value="' + this.options[i][k][1] + '">' + this.options[i][k][1] + '</option>'
+                            this.html += '</select>'
+                        }
+                        break
+                    case 'length':
+                        IDstring = id + '_input_0'
+                        this.html += '<input id="' + IDstring + '" value="' + this.values[i][0] + '" type="text" maxlength="' + this.options[i][0] + '" />'
+                        break
+                    case 'checkbox':
+                        IDstring = id + '_input_0'
+                        this.html += '<input id="' + IDstring + '" type="checkbox"'
+                        if (this.values[i][0] == 'true') this.html += ' checked'
+                        this.html += '/>'
+                        break
+                    case 'maxvalue':
+                        IDstring = id + '_input_0'
+                        max = this.options[i][0]
+                        value = this.values[i][0]
+                        this.html += '<input id="' + IDstring + '" type="range" min="0" max="' + max + '" value="' + value + '" oninput="document.getElementById(\'' + IDstring + '_text\').value = document.getElementById(\'' + IDstring + '\').value" />'
+                        this.html += '<input id="' + IDstring + '_text" type="number" min="0" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
+                        break
+                    case 'range':
+                        IDstring = id + '_input_0'
+                        min = this.options[i][0]
+                        max = this.options[i][1]
+                        value = this.values[i][0]
+                        this.html += '<input id="' + IDstring + '" type="range" min="' + min + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
+                        this.html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
+                        break
+                    case 'rangestep':
+                        IDstring = id + '_input_0'
+                        min = this.options[i][0]
+                        step = this.options[i][1]
+                        max = this.options[i][2]
+                        value = this.values[i][0]
+                        this.html += '<input id="' + IDstring + '" type="range" min="' + min + '" step="' + step + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
+                        this.html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + step + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
+                        break
+                    default: break
+                }
+                this.html += '<br /><br />'
+                id++
+            }
+            this.html = this.html + '</div>'
+
+            document.getElementById('container').innerHTML += this.html
+        }
+    }
+
+    function getStep(val) {
+        str = val.toString().split('.')
+
+        if (str.length == 1) return 1
+        else return 1 / (10 ** str[1].length)
+    }
+
+    function parse_text_as_scad() {
+        text = document.getElementById("scad_textarea").value
+        index = 0
+        elems = []
+
+        while (index < text.length) {
+            if (text[index] == '\n') {
+                index = index + 1
+                continue
+            }
+
+            nIndex = text.indexOf('\n', index)
+            if (nIndex == -1) nIndex = text.length
+
+            parse_line(text.substring(index, nIndex))
+
+            index = nIndex + 1
+        }
+
+        interpret_elems()
+
+        console.log(elems)
+
+        document.getElementById("container").innerHTML = ''
+        id = 0
+        for (I = 0; I < ddbList.length; I++) ddbList[I].show()
+    }
+
+    function generate_param_string() {
+        let parameterSet = { "parameterSets": { "FirstSet": {} } }
+
+        let IDString = ''
+        let valString = ''
+        let tmp = ''
+        id = 0
+        for (i = 0; i < ddbList.length; i++) {
+            varNames = ddbList[i].varNames;
+            values = ddbList[i].values;
+            types = ddbList[i].types;
+            options = ddbList[i].options;
+            for (j = 0; j < types.length; j++) {
+                valString = ''
+                if (values[j].length > 1) valString += '['
+                if (types[j] == 'checkbox') valString += document.getElementById(id + '_input_0').checked
+                else if (types[j] == 'labelled') {
+                    for (k = 0; k < values[j].length; k++) {
+                        IDString = id + '_input_' + k
+                        tmp = document.getElementById(IDString).value
+                        for (l = 0; l < options[j].length; l++) {
+                            if (options[j][k][1] == tmp) {
+                                valString += options[j][k][0]
+                                break
+                            }
+                        }
+                        if (k != values[j].length - 1) valString += ', '
+                    }
+                }
+                else {
+                    for (k = 0; k < values[j].length; k++) {
+                        IDString = id + '_input_' + k
+                        valString += document.getElementById(IDString).value
+                        if (k != values[j].length - 1) valString += ', '
+                    }
+                }
+                if (values[j].length > 1) valString += ']'
+
+                parameterSet["parameterSets"]["FirstSet"][varNames[j]] = valString
+
+                id++
+            }
+        }
+
+        console.log(JSON.stringify(parameterSet))
+        alert(JSON.stringify(parameterSet))
+    }
+
+    function parse_line(line) {
+        OPENING_TAGS = ['/*', '[']
+        CLOSING_TAGS = ['*/', ']']
+        STRONG_OPENING_TAGS = ['"']             //  These are tags in which no other tags can be opened. For example, you cannot open a comment with // inside a string.
+        STRONG_CLOSING_TAGS = ['"']
+        SYMBOLS = ['=', ';', ':', ',', '//']
+
+        for (i = 0; i < line.length; i++) {
+            inTags = false;
+            tag = tag + line[i]
+
+            if (openStrongTag != '') {
+                closingTag = findClosingTag()
+
+                if (closingTag.includes(tag)) {
+                    inTags = true
+                    if (closingTag == tag) {
+                        openStrongTag = ''
+                        pushWordAndTag()
+                    }
+                } else {
+                    word = word + line[i]
+                    tag = '';
+                }
+            } else {
+                for (j = 0; j < STRONG_OPENING_TAGS.length; j++)
+                    if (STRONG_OPENING_TAGS[j] == tag) {
+                        openStrongTag = STRONG_OPENING_TAGS[j]
+                        pushWordAndTag()
+                    }
+
+                closingTag = ''
+                if (openTags.length != 0) {
+                    openTag = openTags[openTags.length - 1]
+                    for (j = 0; j < OPENING_TAGS.length; j++)
+                        if (OPENING_TAGS[j] == openTag)
+                            closingTag = CLOSING_TAGS[j]
+                }
+
+                for (j = 0; j < OPENING_TAGS.length; j++) {
+                    if (tag == closingTag && closingTag != '') {
+                        openTags.pop()
+                        pushWordAndTag()
+                        break;
+                    }
+                    if (OPENING_TAGS[j].includes(tag)) {
+                        inTags = true;
+                        if (OPENING_TAGS[j] == tag) {
+                            openTags.push(OPENING_TAGS[j])
+                            pushWordAndTag()
+                        }
+                    }
+                    if (CLOSING_TAGS[j].includes(tag)) inTags = true;
+                }
+
+                if (inTags == false) {
+                    for (j = 0; j < SYMBOLS.length; j++) {
+                        if (SYMBOLS[j].includes(tag)) {
+                            inTags = true
+                            if (SYMBOLS[j] == tag) pushWordAndTag()
+                        }
+                    }
+                }
+            }
+            if (inTags == false) {
+                if (tag != ' ') word = word + tag
+                else pushWord()
+                tag = '';
+            }
+        }
+        pushWord()
+        elems.push('\n')
+    }
+
+    function findClosingTag() {
+        for (j = 0; j < STRONG_OPENING_TAGS.length; j++)
+            if (STRONG_OPENING_TAGS[j] == openStrongTag)
+                return STRONG_CLOSING_TAGS[j]
+        return ''
+    }
+
+    function pushWord() {
+        if (word.length != 0) {
+            elems.push(word)
+            word = ''
+        }
+    }
+
+    function interpret_elems() {
+        reset_interpreter()
+        ddbList = []
+
+        for (i = 0; i < elems.length; i++) {
+            if (elems[i] == '/*' && elems[i + 1] == '[' && state == 'none') {
+                state = 'ddb'
+                i = i + 1
+            } else if (elems[i] == '/*') {
+                state = 'longcomment'
+            } else if (elems[i] == '*/' && state == 'longcomment') state = 'none'
+            else if (elems[i] == ']' && elems[i + 1] == '*/' && state == 'ddb') {
+                state = 'none'
+                i = i + 1
+                ddbList.push(new DdbDiv(ddbName))
+                ddbName = ''
+            } else if (state == 'ddb') ddbName = ddbName + elems[i]
+            else if (state == 'none' && elems[i] == '//') {
+                if (i == 0) state = 'comment'
+                else if (elems[i - 1] == '\n') state = 'comment'
+            } else if (state == 'comment' && elems[i] != '\n') {
+                if (comment == '') comment = elems[i]
+                else comment = comment + ' ' + elems[i]
+            } else if (state == 'comment' && elems[i] == '\n') {
+                state = 'equal'
+                varName = elems[i + 1]
+            } else if (state == 'equal' && elems[i] == '=') state = 'value'
+            else if (state == 'value') {
+                if (elems[i] == '[') state = 'value_array'
+                else {
+                    if (elems[i] == '"') {
+                        value.push(elems[i + 1])
+                        i = i + 2
+                    } else if (elems[i] == 'true' || elems[i] == 'false') {
+                        type = 'checkbox'
+                        value.push(elems[i])
+                        pushToDDB()
+                        continue
+                    }
+                    else value.push(elems[i])
+                    state = 'semicolon'
+                }
+            } else if (state == 'value_array') {
+                if (elems[i] == ']') {
+                    state = 'semicolon'
+                }
+                else if (elems[i] != ',' && elems[i] != '"') value.push(elems[i])
+            } else if (state == 'semicolon') {
+                if (elems[i] == ';') {
+                    state = 'options'
+                }
+            } else if (state == 'options') {
+                if (elems[i] == '\n') {
+                    type = 'normal'
+                    pushToDDB()
+                }
+                else if (elems[i] == '[') state = 'options['
+                else if (!isNaN(elems[i])) {
+                    type = 'length'
+                    options.push(elems[i])
+                    pushToDDB()
+                }
+            } else if (state == 'options[') {
+                if (elems[i + 1] == ',') {
+                    type = 'combobox'
+                    let tmp = ''
+                    while (true) {
+                        if (elems[i] == ',') {
+                            pushOption(tmp.substring(0, tmp.length - 1))
+                            tmp = ''
+                            i = i + 1
+                            continue
+                        }
+                        else if (elems[i] == ']') {
+                            pushOption(tmp.substring(0, tmp.length - 1))
+                            tmp = ''
+                            break
+                        }
+                        else {
+                            tmp += elems[i] + ' '
+                            i = i + 1
+                        }
+                    }
+                }
+                else if (elems[i + 1] == ']') {
+                    if (!isNaN(elems[i])) type = 'maxvalue'
+                    else type = 'combobox'
+                    pushOption(elems[i])
+                }
+                else if (elems[i + 1] == ':' && elems[i + 3] == ':' && !isNaN(elems[i]) && !isNaN(elems[i + 2]) && !isNaN(elems[i + 4])) {
+                    type = 'rangestep'
+                    pushOption(elems[i])
+                    pushOption(elems[i + 2])
+                    pushOption(elems[i + 4])
+                    i = i + 4
+                }
+                else if (elems[i + 1] == ':' && elems[i + 3] == ']') {
+                    type = 'range'
+                    pushOption(elems[i])
+                    pushOption(elems[i + 2])
+                    i = i + 2
+                }
+                else if (elems[i + 1] == ':') {
+                    type = 'labelled'
+                    while (elems[i + 1] == ':') {
+                        pushOptionList(elems[i], elems[i + 2])
+                        i = i + 3
+                        if (elems[i] == ',') i = i + 1
+                        else break;
+                    }
+                }
+                if (elems[i] == ']') pushToDDB()
+            }
+        }
+    }
+
+    function pushWordAndTag() {
+        pushWord()
+        elems.push(tag)
+        tag = ''
+    }
+
+    function pushOption(e) {
+        if (!isNaN(e)) options.push(parseFloat(e))
+        else options.push(e)
+    }
+
+    function pushOptionList(e1, e2) {
+        if (!isNaN(e1)) e1 = parseFloat(e1)
+        if (!isNaN(e2)) e2 = parseFloat(e2)
+        options.push([e1, e2])
+    }
+
+    function pushToDDB() {
+        if (ddbList.length == 0) ddbList.push(new DdbDiv(ddbName))
+        ddbList[ddbList.length - 1].addElement(varName, comment, value, options, type)
+        reset_interpreter()
+    }
+
+    function reset_interpreter() {
+        state = 'none'
+        ddbName = ''
+        comment = ''
+        varName = ''
+        value = []
+        options = []
+        type = ''
+
+        while (elems[i] != '\n') i++
+    }
+</script>
+
+<!-- <body> -->
+
+<body onload="parse_text_as_scad()">
+    <textarea rows="25" cols="75" id="scad_textarea">/* [Drop down box:] */
+//  An integer variable
+int_var=4;
+
+//  A floating point variable
+float_var=6.28;
+
+//  A mixed list of ints and floats
+mixed_list = [3.4, 7, 8.23, 10];
+
+// combo box for number
+cb_number=2; // [0, 2, 4, 6]
+
+// combo box for list of numbers
+cb_list=[6,7]; // [3, 5, 6, 7, 9, 20]
+
+/* [Drop down box 2:] */
+// combo box for string
+Strings="foo"; // [foo, bar, baz]
+
+// combo box for list of strings
+Strings=["foo", "lorem", "ipsum", "a b c"]; // [foo, bar, baz, lorem, ipsum, dolor, sit, amet, c d e]
+
+//labeled combo box for string
+Labeled_value=["S", "M"]; // [S:Small, M:Medium, L:Large]
+
+//	string with length
+string_length="ja"; // 9
+
+//  checkbox
+checkbox = true;
+
+// slider widget for number with max. value
+sliderWithMax =3; // [5]
+
+// slider widget for number in range
+sliderWithRange =35; // [10:100]
+
+// slider with range and given step size
+sliderStepRange = 2; // [0:2:10]</textarea>
+    <br />
+    <button onclick="parse_text_as_scad()">Parse</button>
+    <button onclick="generate_param_string()">Generate parameter string</button>
+    <br /><br />
+
+    <div id="container"></div>
+</body>
+
+</html>
