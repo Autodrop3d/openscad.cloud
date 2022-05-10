@@ -31,7 +31,7 @@ class DdbDiv {
                     case 'bool':
                         html += '<input id="' + IDstring + '" type="checkbox"'
                         if (this.values[i][0] == 'true') html += ' checked'
-                        html += '/>'
+                        html += ' style="' + STYLE + '"></input>'
                         break
                     case 'number':
                         html += '<input id="' + IDstring + '" type="number" value=' + this.values[i][j] + ' step="' + getStep(this.values[i][j]) + '" style="' + STYLE + '"></input>'
@@ -90,14 +90,13 @@ class DdbDiv {
     }
 }
 
-STYLE = 'width: 4em; margin-left: 1em;'
+STYLE = 'width: 4em; margin-left: 1em; display: inline;'
 
 ddbList = []
 shouldSkip = false
 id = 0
 
 function parse_text_as_scad(text) {
-    document.getElementById("container").innerHTML = '';
     const ddbOpenRe = /^[ 	]*\/\*[	 ]*\[/
     const ddbCloseRe = /\][	 ]*\*\//
 
@@ -171,7 +170,7 @@ function parse_text_as_scad(text) {
         }
     })
 
-
+    document.getElementById("container").innerHTML = ''
     id = 0
     for (I = 0; I < ddbList.length; I++) ddbList[I].show()
 }
