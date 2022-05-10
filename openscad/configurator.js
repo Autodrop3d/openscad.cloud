@@ -96,7 +96,7 @@ ddbList = []
 shouldSkip = false
 id = 0
 
- function parse_text_as_scad(text) {
+function parse_text_as_scad(text) {
     document.getElementById("container").innerHTML = '';
     const ddbOpenRe = /^[ 	]*\/\*[	 ]*\[/
     const ddbCloseRe = /\][	 ]*\*\//
@@ -171,7 +171,7 @@ id = 0
         }
     })
 
-    
+
     id = 0
     for (I = 0; I < ddbList.length; I++) ddbList[I].show()
 }
