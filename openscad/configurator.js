@@ -335,8 +335,9 @@ function get_options(line) {
 }
 
 function showError(msg) {
-    alert(msg)
-    shouldSkip = true
+    //alert(msg)
+    console.log(msg);
+    shouldSkip = true;
 }
 
 function pushToDDB(varName, comment, value, options, type) {
@@ -395,7 +396,7 @@ async function generate_param_string() {
         }
     }
 
-    alert(valString);
+    //alert(valString);
     console.log(valString);
     return valString;
 }
