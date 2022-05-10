@@ -679,7 +679,7 @@
 
 
     async function run_Configurator() {
-
+        $("#container").innerHTML = "";
         configuratorString = await generate_param_string();
         document.getElementById("runOpenSCAD").click();
         await $('#configurator').hide();

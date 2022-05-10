@@ -106,6 +106,7 @@ function parse_text_as_scad(text) {
     let value = []
     let optionsType = ''
     let options = []
+    ddbList = []
 
     let shouldSkip_ = false
 
