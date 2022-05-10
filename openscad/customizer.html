@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en-US">
 
@@ -7,496 +6,503 @@
 </head>
 
 <script>
-    STYLE = 'width: 4em; margin-left: 1em;'     //  Style of the input text fields
 
-    openStrongTag = ''
-    openTags = []
-
-    tag = ''
-    word = ''
-    inTags = false
-    elems = []
-
-    state = 'none'
-    ddbName = ''
-    comment = ''
-    varName = ''
-    value = []
-    options = []
-    type = ''
-
-    ddbDivs = []
-    id = 0
-
-    class DdbDiv {
-        constructor(name) {
-            this.name = name
-            this.varNames = []
-            this.comments = []
-            this.values = []
-            this.options = []
-            this.types = []
-
-            this.html = ''
-
-            this.default = ''
-        }
-
-        addElement(varName_, comment_, value_, options_, type_) {
-            this.varNames.push(varName_)
-            this.comments.push(comment_)
-            this.values.push(value_)
-            this.options.push(options_)
-            this.types.push(type_)
-        }
-
-        show() {
-            let IDstring = ''
-            this.html = '<div id="' + id + '">\n\t<h1>' + this.name + '</h1>'
-            for (i = 0; i < this.varNames.length; i++) {
-                let min = 0, max = 0, value = 0, step = 0, k = 0
-
-                this.html += '<b>' + this.varNames[i] + '</b><br /><i>' + this.comments[i] + '</i><br />'
-
-                switch (this.types[i]) {
-                    case 'normal':
-                        for (j = 0; j < this.values[i].length; j++) {
-                            IDstring = id + '_input_' + j
-                            this.html += '<input id="' + IDstring + '" type="number" value=' + this.values[i][j] + ' step="' + getStep(this.values[i][j]) + '" style="' + STYLE + '"></input>'
-                        }
-                        break
-                    case 'combobox':
-                        for (j = 0; j < this.values[i].length; j++) {
-                            IDstring = id + '_input_' + j
-                            this.html += '<select id="' + IDstring + '" style="' + STYLE + '">'
-                            this.html += '<option value="' + this.values[i][j] + '" hidden>' + this.values[i][j] + '</option>'
-                            for (k = 0; k < this.options[i].length; k++) this.html += '<option value="' + this.options[i][k] + '">' + this.options[i][k] + '</option>'
-                            this.html += '</select>'
-                        }
-                        break
-                    case 'labelled':
-                        for (j = 0; j < this.values[i].length; j++) {
-                            IDstring = id + '_input_' + j
-                            this.default = this.options[i][0][1]
-                            for (k = 0; k < this.options[i].length; k++) if (this.values[i][j] == this.options[i][k][0]) this.default = this.options[i][k][1]
-
-                            this.html += '<select id="' + IDstring + '" style="' + STYLE + '">'
-                            this.html += '<option value="' + this.default + '" hidden>' + this.default + '</option>'
-                            for (k = 0; k < this.options[i].length; k++) this.html += '<option value="' + this.options[i][k][1] + '">' + this.options[i][k][1] + '</option>'
-                            this.html += '</select>'
-                        }
-                        break
-                    case 'length':
-                        IDstring = id + '_input_0'
-                        this.html += '<input id="' + IDstring + '" value="' + this.values[i][0] + '" type="text" maxlength="' + this.options[i][0] + '" />'
-                        break
-                    case 'checkbox':
-                        IDstring = id + '_input_0'
-                        this.html += '<input id="' + IDstring + '" type="checkbox"'
-                        if (this.values[i][0] == 'true') this.html += ' checked'
-                        this.html += '/>'
-                        break
-                    case 'maxvalue':
-                        IDstring = id + '_input_0'
-                        max = this.options[i][0]
-                        value = this.values[i][0]
-                        this.html += '<input id="' + IDstring + '" type="range" min="0" max="' + max + '" value="' + value + '" oninput="document.getElementById(\'' + IDstring + '_text\').value = document.getElementById(\'' + IDstring + '\').value" />'
-                        this.html += '<input id="' + IDstring + '_text" type="number" min="0" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
-                        break
-                    case 'range':
-                        IDstring = id + '_input_0'
-                        min = this.options[i][0]
-                        max = this.options[i][1]
-                        value = this.values[i][0]
-                        this.html += '<input id="' + IDstring + '" type="range" min="' + min + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
-                        this.html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
-                        break
-                    case 'rangestep':
-                        IDstring = id + '_input_0'
-                        min = this.options[i][0]
-                        step = this.options[i][1]
-                        max = this.options[i][2]
-                        value = this.values[i][0]
-                        this.html += '<input id="' + IDstring + '" type="range" min="' + min + '" step="' + step + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
-                        this.html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + step + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
-                        break
-                    default: break
-                }
-                this.html += '<br /><br />'
-                id++
-            }
-            this.html = this.html + '</div>'
-
-            document.getElementById('container').innerHTML += this.html
-        }
-    }
-
-    function getStep(val) {
-        str = val.toString().split('.')
-
-        if (str.length == 1) return 1
-        else return 1 / (10 ** str[1].length)
-    }
-
-    function parse_text_as_scad() {
-        text = document.getElementById("scad_textarea").value
-        index = 0
-        elems = []
-
-        while (index < text.length) {
-            if (text[index] == '\n') {
-                index = index + 1
-                continue
-            }
-
-            nIndex = text.indexOf('\n', index)
-            if (nIndex == -1) nIndex = text.length
-
-            parse_line(text.substring(index, nIndex))
-
-            index = nIndex + 1
-        }
-
-        interpret_elems()
-
-        console.log(elems)
-
-        document.getElementById("container").innerHTML = ''
-        id = 0
-        for (I = 0; I < ddbList.length; I++) ddbList[I].show()
-    }
-
-    function generate_param_string() {
-        let parameterSet = { "parameterSets": { "FirstSet": {} } }
-
-        let IDString = ''
-        let valString = ''
-        let tmp = ''
-        id = 0
-        for (i = 0; i < ddbList.length; i++) {
-            varNames = ddbList[i].varNames;
-            values = ddbList[i].values;
-            types = ddbList[i].types;
-            options = ddbList[i].options;
-            for (j = 0; j < types.length; j++) {
-                valString = ''
-                if (values[j].length > 1) valString += '['
-                if (types[j] == 'checkbox') valString += document.getElementById(id + '_input_0').checked
-                else if (types[j] == 'labelled') {
-                    for (k = 0; k < values[j].length; k++) {
-                        IDString = id + '_input_' + k
-                        tmp = document.getElementById(IDString).value
-                        for (l = 0; l < options[j].length; l++) {
-                            if (options[j][k][1] == tmp) {
-                                valString += options[j][k][0]
-                                break
-                            }
-                        }
-                        if (k != values[j].length - 1) valString += ', '
-                    }
-                }
-                else {
-                    for (k = 0; k < values[j].length; k++) {
-                        IDString = id + '_input_' + k
-                        valString += document.getElementById(IDString).value
-                        if (k != values[j].length - 1) valString += ', '
-                    }
-                }
-                if (values[j].length > 1) valString += ']'
-
-                parameterSet["parameterSets"]["FirstSet"][varNames[j]] = valString
-
-                id++
-            }
-        }
-
-        console.log(JSON.stringify(parameterSet))
-        alert(JSON.stringify(parameterSet))
-    }
-
-    function parse_line(line) {
-        OPENING_TAGS = ['/*', '[']
-        CLOSING_TAGS = ['*/', ']']
-        STRONG_OPENING_TAGS = ['"']             //  These are tags in which no other tags can be opened. For example, you cannot open a comment with // inside a string.
-        STRONG_CLOSING_TAGS = ['"']
-        SYMBOLS = ['=', ';', ':', ',', '//']
-
-        for (i = 0; i < line.length; i++) {
-            inTags = false;
-            tag = tag + line[i]
-
-            if (openStrongTag != '') {
-                closingTag = findClosingTag()
-
-                if (closingTag.includes(tag)) {
-                    inTags = true
-                    if (closingTag == tag) {
-                        openStrongTag = ''
-                        pushWordAndTag()
-                    }
-                } else {
-                    word = word + line[i]
-                    tag = '';
-                }
-            } else {
-                for (j = 0; j < STRONG_OPENING_TAGS.length; j++)
-                    if (STRONG_OPENING_TAGS[j] == tag) {
-                        openStrongTag = STRONG_OPENING_TAGS[j]
-                        pushWordAndTag()
-                    }
-
-                closingTag = ''
-                if (openTags.length != 0) {
-                    openTag = openTags[openTags.length - 1]
-                    for (j = 0; j < OPENING_TAGS.length; j++)
-                        if (OPENING_TAGS[j] == openTag)
-                            closingTag = CLOSING_TAGS[j]
-                }
-
-                for (j = 0; j < OPENING_TAGS.length; j++) {
-                    if (tag == closingTag && closingTag != '') {
-                        openTags.pop()
-                        pushWordAndTag()
-                        break;
-                    }
-                    if (OPENING_TAGS[j].includes(tag)) {
-                        inTags = true;
-                        if (OPENING_TAGS[j] == tag) {
-                            openTags.push(OPENING_TAGS[j])
-                            pushWordAndTag()
-                        }
-                    }
-                    if (CLOSING_TAGS[j].includes(tag)) inTags = true;
-                }
-
-                if (inTags == false) {
-                    for (j = 0; j < SYMBOLS.length; j++) {
-                        if (SYMBOLS[j].includes(tag)) {
-                            inTags = true
-                            if (SYMBOLS[j] == tag) pushWordAndTag()
-                        }
-                    }
-                }
-            }
-            if (inTags == false) {
-                if (tag != ' ') word = word + tag
-                else pushWord()
-                tag = '';
-            }
-        }
-        pushWord()
-        elems.push('\n')
-    }
-
-    function findClosingTag() {
-        for (j = 0; j < STRONG_OPENING_TAGS.length; j++)
-            if (STRONG_OPENING_TAGS[j] == openStrongTag)
-                return STRONG_CLOSING_TAGS[j]
-        return ''
-    }
-
-    function pushWord() {
-        if (word.length != 0) {
-            elems.push(word)
-            word = ''
-        }
-    }
-
-    function interpret_elems() {
-        reset_interpreter()
-        ddbList = []
-
-        for (i = 0; i < elems.length; i++) {
-            if (elems[i] == '/*' && elems[i + 1] == '[' && state == 'none') {
-                state = 'ddb'
-                i = i + 1
-            } else if (elems[i] == '/*') {
-                state = 'longcomment'
-            } else if (elems[i] == '*/' && state == 'longcomment') state = 'none'
-            else if (elems[i] == ']' && elems[i + 1] == '*/' && state == 'ddb') {
-                state = 'none'
-                i = i + 1
-                ddbList.push(new DdbDiv(ddbName))
-                ddbName = ''
-            } else if (state == 'ddb') ddbName = ddbName + elems[i]
-            else if (state == 'none' && elems[i] == '//') {
-                if (i == 0) state = 'comment'
-                else if (elems[i - 1] == '\n') state = 'comment'
-            } else if (state == 'comment' && elems[i] != '\n') {
-                if (comment == '') comment = elems[i]
-                else comment = comment + ' ' + elems[i]
-            } else if (state == 'comment' && elems[i] == '\n') {
-                state = 'equal'
-                varName = elems[i + 1]
-            } else if (state == 'equal' && elems[i] == '=') state = 'value'
-            else if (state == 'value') {
-                if (elems[i] == '[') state = 'value_array'
-                else {
-                    if (elems[i] == '"') {
-                        value.push(elems[i + 1])
-                        i = i + 2
-                    } else if (elems[i] == 'true' || elems[i] == 'false') {
-                        type = 'checkbox'
-                        value.push(elems[i])
-                        pushToDDB()
-                        continue
-                    }
-                    else value.push(elems[i])
-                    state = 'semicolon'
-                }
-            } else if (state == 'value_array') {
-                if (elems[i] == ']') {
-                    state = 'semicolon'
-                }
-                else if (elems[i] != ',' && elems[i] != '"') value.push(elems[i])
-            } else if (state == 'semicolon') {
-                if (elems[i] == ';') {
-                    state = 'options'
-                }
-            } else if (state == 'options') {
-                if (elems[i] == '\n') {
-                    type = 'normal'
-                    pushToDDB()
-                }
-                else if (elems[i] == '[') state = 'options['
-                else if (!isNaN(elems[i])) {
-                    type = 'length'
-                    options.push(elems[i])
-                    pushToDDB()
-                }
-            } else if (state == 'options[') {
-                if (elems[i + 1] == ',') {
-                    type = 'combobox'
-                    let tmp = ''
-                    while (true) {
-                        if (elems[i] == ',') {
-                            pushOption(tmp.substring(0, tmp.length - 1))
-                            tmp = ''
-                            i = i + 1
-                            continue
-                        }
-                        else if (elems[i] == ']') {
-                            pushOption(tmp.substring(0, tmp.length - 1))
-                            tmp = ''
-                            break
-                        }
-                        else {
-                            tmp += elems[i] + ' '
-                            i = i + 1
-                        }
-                    }
-                }
-                else if (elems[i + 1] == ']') {
-                    if (!isNaN(elems[i])) type = 'maxvalue'
-                    else type = 'combobox'
-                    pushOption(elems[i])
-                }
-                else if (elems[i + 1] == ':' && elems[i + 3] == ':' && !isNaN(elems[i]) && !isNaN(elems[i + 2]) && !isNaN(elems[i + 4])) {
-                    type = 'rangestep'
-                    pushOption(elems[i])
-                    pushOption(elems[i + 2])
-                    pushOption(elems[i + 4])
-                    i = i + 4
-                }
-                else if (elems[i + 1] == ':' && elems[i + 3] == ']') {
-                    type = 'range'
-                    pushOption(elems[i])
-                    pushOption(elems[i + 2])
-                    i = i + 2
-                }
-                else if (elems[i + 1] == ':') {
-                    type = 'labelled'
-                    while (elems[i + 1] == ':') {
-                        pushOptionList(elems[i], elems[i + 2])
-                        i = i + 3
-                        if (elems[i] == ',') i = i + 1
-                        else break;
-                    }
-                }
-                if (elems[i] == ']') pushToDDB()
-            }
-        }
-    }
-
-    function pushWordAndTag() {
-        pushWord()
-        elems.push(tag)
-        tag = ''
-    }
-
-    function pushOption(e) {
-        if (!isNaN(e)) options.push(parseFloat(e))
-        else options.push(e)
-    }
-
-    function pushOptionList(e1, e2) {
-        if (!isNaN(e1)) e1 = parseFloat(e1)
-        if (!isNaN(e2)) e2 = parseFloat(e2)
-        options.push([e1, e2])
-    }
-
-    function pushToDDB() {
-        if (ddbList.length == 0) ddbList.push(new DdbDiv(ddbName))
-        ddbList[ddbList.length - 1].addElement(varName, comment, value, options, type)
-        reset_interpreter()
-    }
-
-    function reset_interpreter() {
-        state = 'none'
-        ddbName = ''
-        comment = ''
-        varName = ''
-        value = []
-        options = []
-        type = ''
-
-        while (elems[i] != '\n') i++
-    }
 </script>
 
 <!-- <body> -->
 
 <body onload="parse_text_as_scad()">
-    <textarea rows="25" cols="75" id="scad_textarea">/* [Drop down box:] */
-//  An integer variable
-int_var=4;
+    <textarea rows="25" cols="75" id="scad_textarea">
 
-//  A floating point variable
-float_var=6.28;
+$fs = 0.05;
 
-//  A mixed list of ints and floats
-mixed_list = [3.4, 7, 8.23, 10];
+//====== From Req
+output_d = 5;
+output_travel = 2; // Maximum expected translation
+inter_hole_dx = 70;
+inter_hole_dy = 60;
+gain = 4.5;
 
-// combo box for number
-cb_number=2; // [0, 2, 4, 6]
+//====== Design DOF
+// Input Lever geometry
+l0 = 6; // From pivot point (mid-hinge) to rod attachement
+lever_w = 4;
+t_center = 2; // Thickness of the output shuttle
 
-// combo box for list of numbers
-cb_list=[6,7]; // [3, 5, 6, 7, 9, 20]
+// Main support elements
+l2 = 24;
+w2 = 3;
 
-/* [Drop down box 2:] */
-// combo box for string
-Strings="foo"; // [foo, bar, baz]
+// Pushing rod (connection)
+rod_l = 20;
+rod_w = 2.5;
+rod_clearance = 2; // room around the rod (sum of both sides)
 
-// combo box for list of strings
-Strings=["foo", "lorem", "ipsum", "a b c"]; // [foo, bar, baz, lorem, ipsum, dolor, sit, amet, c d e]
+hinge_l = 4; //Standard hinges
+hinge_t = 0.5; // All hinges
+hinge_r = 1;
+lever_hinge_l = 6;  // Lever only
 
-//labeled combo box for string
-Labeled_value=["S", "M"]; // [S:Small, M:Medium, L:Large]
+h0 = 2.8; // height of the moving elements
+separation_h = 1; // at least 0.6 for the bridge & rod to separate easily, higer = better
+support_h = 0.8;  // From end of frame to ground 
 
-//	string with length
-string_length="ja"; // 9
+screw_d = 3;//Both attachment holes and gate 
 
-//  checkbox
-checkbox = true;
+screw_head_l = 4; //All the rest derives from the screw d 
+screw_head_d = 5.5;
+nut_h  = 2.4;
+nut_d_ac = 6; // nut external diameter, across corner
 
-// slider widget for number with max. value
-sliderWithMax =3; // [5]
+//====   Derived + Static parameters
+l_gate = gain*l0; // Distance from pivot point to actuation point
+center_body_d = output_d + 2*t_center;
 
-// slider widget for number in range
-sliderWithRange =35; // [10:100]
 
-// slider with range and given step size
-sliderStepRange = 2; // [0:2:10]</textarea>
+input_travel= output_travel*gain;
+
+l1 = (l_gate - l0) + lever_w; // from the x axis to the end of the lever
+tip_travel = output_travel*(l0 + l1)/l0; // Input movement of the tip
+
+frame_h = h0 + separation_h; // height of the full frame ( supports are still not considered )
+
+// Static Parameters
+screw_gate_l = 20;//Y size of the screw holder
+
+elastic_d=1.8;
+
+frame_t = 4; //Lateral (xy plane) thickness of the frame
+
+groove_d = 1.5;
+text_size =3.5;
+
+min_tol = 0.3;
+p0 = 0.01;
+
+A0_f_adjust_0_STAND_ALONE_PRINT();
+
+//!A0_f_adjust_0_NULL();
+module A0_f_adjust_0_NULL(){
+    rotate([20,0,0])all_togeher();
+}
+
+module A0_f_adjust_0_STAND_ALONE_PRINT(){
+    rotate([0,180,0]) translate([0,0,-h0/2]) all_togeher();
+}
+
+module all_togeher(){
+   color("LightSteelBlue"){
+        output_shuttle();
+        translate([(center_body_d + w2)/2, t_center + (l2 + hinge_l)/2 ,0]) slender_0();
+        translate([-(center_body_d + w2)/2, t_center + (l2 + hinge_l)/2 ,0]) slender_0();
+
+        mirror([0,1,0]){
+            translate([(center_body_d/2 + w2/2), t_center + (l2 + hinge_l)/2 ,0]) slender_0();
+            translate([-(center_body_d/2 + w2/2), t_center + (l2 + hinge_l)/2 ,0]) slender_0();
+        }
+
+        translate([center_body_d/2 + w2 + rod_l/2 + hinge_l/2, 0, 0]) rod();
+        translate([center_body_d/2 + w2 + rod_l + hinge_l/2 , 0, 0]) lever();
+
+        translate([0,0,h0/2-frame_h/2])frame_body();
+    }
+    
+}
+
+//!output_shuttle();
+module output_shuttle(){
+    difference(){
+        union(){
+            //cube([main_d,main_d,h0],center = true);
+            cylinder(d = center_body_d, h= h0,center = true, $fn = 6);
+            cube([center_body_d + 2*w2, 2*t_center, h0],center = true);
+        }
+        cylinder(d = output_d , h = 1.2*h0, center = true );
+    }
+}
+
+//!slender_0();
+module slender_0(){
+    core_l = l2 - hinge_l;
+    cube([w2,core_l,h0],center = true);
+    translate([0,(core_l + hinge_l)/2 ,0]) hinge();
+    translate([0,-(core_l + hinge_l)/2,0]) hinge();
+
+    //%translate([10,0,0]) cube([w2,l2,h0],center = true);
+}
+
+//!rod();
+module rod(){
+    l_core = rod_l - hinge_l;
+    cube([l_core,rod_w,h0],center = true);
+    translate([l_core/2 + hinge_l/2,0 ,0]) rotate([0,0,90]) hinge();
+    translate([-(l_core/2 + hinge_l/2),0 ,0]) rotate([0,0,90]) hinge();
+
+   // translate([0,5,0]) cube([rod_l + hinge_l,rod_w,h0],center = true);
+}
+
+/*
+//!groove_pattern();
+module groove_pattern(d_groove = 2,h = 10,space = 2){
+    // Grove in the x direction,centered
+    translate([- d_groove -space,0,0])cylinder(d = d_groove, h = h,center = true, $fn=4);
+    translate([0,0,0])cylinder(d = d_groove, h = h,center = true, $fn=4);
+    translate([+d_groove + space,0,0])cylinder(d = d_groove, h = h,center = true, $fn=4);
+}*/
+
+//!lever();
+module lever(){
+    // Alligned with l0 in the middle
+     theta = atan( input_travel/l_gate );
+     groove_upp_end_pos = l0 - sqrt(pow(l_gate,2) - pow(input_travel,2) );
+     groove_lwr_end_pos = l0 - l_gate;
+     groove_r = 0.5;
+     difference(){
+        leverBulk(h = h0);
+        //Rod hinge hole
+        hull(){
+            translate([-lever_w/2,0,0])cylinder(d=rod_w + rod_clearance,h =1.2*h0,center = true);
+            translate([hinge_l/2-rod_w/2,0,0])cylinder(d=rod_w,h =1.2*h0,center = true);
+        }
+
+        //screw guide hole
+       hull(){
+            translate([+groove_r,groove_lwr_end_pos -screw_d/2,0]) cylinder(r =groove_r, h = 1.2*h0, center = true);
+            translate([groove_r,groove_upp_end_pos + screw_d/2,0]) cylinder(r =groove_r, h = 1.2*h0, center = true);
+            
+            translate([0,groove_lwr_end_pos -screw_d/2,0])rotate([0,0,-theta])translate([+lever_w,0,0]) cylinder(r =groove_r, h = 1.2*h0, center = true);
+            translate([0,+groove_upp_end_pos + screw_d/2,0])rotate([0,0,+theta])translate([+lever_w,0,0]) cylinder(r =groove_r, h = 1.2*h0, center = true);
+        }
+        // Add grooves for the elastic
+        translate([-lever_w/2, l0 - l_gate + (screw_head_d +  elastic_d),0 ]) cylinder(d = elastic_d,h = 1.2*h0, center =true, $fn = 4);
+        translate([-lever_w/2, l0 - (l_gate +screw_d/2),0 ]) cylinder(d = elastic_d,h = 1.2*h0, center =true, $fn = 4);
+        
+    }
+    translate([ 0,l0,0]) corner_filletted_hinge(t = hinge_t, r = hinge_r, l = lever_hinge_l, h = h0);
+}
+
+//!leverBulk();
+module leverBulk(h = h0){
+  //Screw Actuated
+  linear_extrude(height= h,center = true, convexity = 2){
+                polygon([ [lever_w/2 + hinge_l/2,l0 - lever_hinge_l/2],
+                          [-hinge_r - hinge_t/2,l0 - lever_hinge_l/2],
+                          [-hinge_r - hinge_t/2,0],
+                          [-lever_w/2,-rod_w/2],
+                          [-lever_w/2,-l1+1],// bottom left-corner
+                          [0,-l1],// bottom tip
+                          [lever_w/2,-l1+1],
+                          [lever_w/2,-rod_w/2-hinge_l/2],
+                          [lever_w/2+hinge_l/2,-rod_w/2]]);
+    }
+}
+
+
+//%lever_negative();
+module lever_negative(){
+    // Space for the lever, same position
+    tot_h = frame_h + support_h; 
+    max_theta = atan( (lever_w/2 + tip_travel)/(l0+l1) );
+   translate([0,l0,0]){
+       hull(){
+           cylinder(d=lever_hinge_l,h=2*h0,center = true);
+           rotate([0,0,-max_theta]) translate([0,-l0,0]) leverBulk(h= 2*tot_h);
+           rotate([0,0,+max_theta]) translate([0,-l0,0]) leverBulk(h= 2*tot_h);
+        }
+        rotate([0,0,180])arc_cylinder(r = l0+l1 +0.5,h =2*h0+p0,deg = max_theta*2);
+   }
+
+   module arc_cylinder(r,h,deg){
+       intersection(){
+           cylinder(r =r, h=h, center = true);
+           linear_extrude(height= 1.2*h,center = true, convexity = 2){
+                polygon([ [0,0],
+                          [1.5*r*sin(deg/2),1.5*r*cos(deg/2)],
+                          [1.5*r*sin(-deg/2),1.5*r*cos(-deg/2)]]);
+           }
+       }
+   }
+}
+
+//!screw_gate();
+module screw_gate(){
+   //Where you put the screw + anchor for elastic bands
+   //The screw will always have the axys on the xy plane; the top surface will be at top_h from x-y plane
+    added_h = min(support_h,1);
+    tot_h = frame_h + added_h - p0;
+    top_h = frame_h/2;
+    w_max= nut_h + frame_t;
+    length = screw_gate_l;
+    
+    module bulk(){
+    //Extruded from the front, with the bulge for the screw in the middle 
+        step = 2*(tot_h - 2*top_h)/2;
+        front_profile=[[-tot_h/2,-length/2],
+                       [ tot_h/2 - step,-length/2],
+                       [ tot_h/2 - step, -screw_head_d/2],
+                       [ tot_h/2 , -screw_head_d/2 + step ],
+                       [ tot_h/2 , +screw_head_d/2 - step ],
+                       [ tot_h/2 - step, screw_head_d/2],
+                       [ tot_h/2 - step, length/2],
+                       [ -tot_h/2,length/2],
+            ];
+        depth = w_max;
+        rotate([0,90,0])linear_extrude(depth, center = true, convexity = 3)polygon(front_profile);
+    }
+   
+    module bolt_insertion_hole(){
+      // The bolt should be inserted from below
+      rotate([0,-90,0]) linear_extrude(nut_h + min_tol,center = true, convexity =3)
+      offset(min_tol/2) // make it a bit larger to ease insertion
+      hull(){
+         circle(d = nut_d_ac,$fn=6);
+         translate([-3*h0,0,0])circle(d = nut_d_ac,$fn=6);
+      }        
+    }
+    
+    module screw_body_hole(){
+      rotate([0,-90,0])cylinder(d = screw_d + min_tol, h = 2*w_max,center = true );
+      translate([0,0,-(screw_d + min_tol)*cos(45)/2-p0])rotate([0,-90,0])cylinder(d = (screw_d + min_tol)*cos(45), h = 2*w_max,center = true,$fn = 4);
+    }
+    
+    module hook_rubber_band(){
+        difference(){
+            translate([screw_head_l/2,0,0]) cube([screw_head_l,screw_head_d,top_h*2], center = true);
+           translate([elastic_d/2,-p0-screw_head_d/2,0])cylinder(d = elastic_d, h = 2.2*top_h, center = true, $fn=4);
+           translate([+elastic_d/2-p0,+screw_head_d/2,0])cylinder(d = elastic_d, h = 2.2*top_h, center = true, $fn=4);
+        }
+    }
+
+   difference(){
+      translate([0,0,-tot_h/2 + top_h ]) bulk();
+      screw_body_hole();      
+      bolt_insertion_hole();
+    }
+    translate([w_max/2,+length/2 -screw_head_d/2,0])hook_rubber_band();
+    translate([w_max/2,-length/2 + screw_head_d/2 ,0])hook_rubber_band();
+}
+
+//%screw_gate_negative();
+module screw_gate_negative(){
+   tot_h = frame_h + support_h - p0;
+   w_max= nut_h + frame_t;
+ 
+   //Space for the screw 
+   rotate([0,-90,0])cylinder(d = frame_h*1.1 + min_tol-p0, h = 2*(input_travel + w_max),center = true );
+  
+    //Space for the nut 
+   nut_d_a_flat = nut_d_ac/2*tan(60);
+   translate([0,0,0])cube([ 2*nut_h, 2*nut_d_a_flat,3*h0 ],center = true);
+
+   //Space for the elastic band 
+   translate([screw_head_l +w_max/2 - p0 , 0,0] ) cube([ 2*screw_head_l,screw_gate_l + 2*elastic_d,2*tot_h ],center = true);    
+}
+
+//!anchor_cross_2D();
+module anchor_cross_2D(x_hole = 20, y_hole = 20){ 
+   //New version, only 2D profile, extruded togheter with the frame 
+   anchor_t = 3;
+   module single_arm(pos=[20,20]){
+     difference(){
+       hull(){
+            translate([pos[0],pos[1],0]) circle(d = screw_d + min_tol + anchor_t);
+            circle(r = (screw_d + anchor_t)*3 );
+       }
+       translate([pos[0],pos[1],0]) circle(d = screw_d + min_tol);
+     }
+   }
+
+   // Only 3 arms, none at the screw gate
+   difference(){
+       union(){
+           single_arm(pos=[inter_hole_dx/2 ,inter_hole_dy/2]); 
+           single_arm(pos=[-inter_hole_dx/2 ,inter_hole_dy/2]); 
+           single_arm(pos=[-inter_hole_dx/2 ,-inter_hole_dy/2]); 
+       }
+       circle(r = min(x_hole,y_hole),$fn=4);
+   }
+}
+
+//!frame_body();
+module frame_body(){
+    //Moving to point based design:
+    slender_0_x = -(center_body_d +  w2)/2;
+    slender_1_x = +(center_body_d +  w2)/2;
+    slender_y = t_center + l2 + hinge_l;// top of the slender element
+    
+    rod_body_x = center_body_d/2 + w2 + hinge_l;  // where the rod starts
+    rod_body_y = rod_w/2;
+
+    lever_axis_x = center_body_d/2 + w2 + rod_l + hinge_l/2;
+
+    left_corner_x = slender_0_x - w2/2 - 1.5*output_travel - frame_t;
+    right_corner_x = lever_axis_x + lever_w/2 + tip_travel + frame_t + nut_h + lever_w/2;
+ 
+    
+    span_y = (slender_y< l1)? 2*l1: 2*slender_y;
+    full_span_x = right_corner_x - left_corner_x;
+    x_offset = full_span_x/2 + left_corner_x; 
+    span_x = full_span_x - 2*frame_t;
+
+    tot_y = span_y + 2*frame_t;
+   
+    module outer_perimeter_2D(){
+       //From top corner left corner, counter clock wise
+      polygon([ [ left_corner_x, tot_y/2],
+                [ left_corner_x, -tot_y/2],
+                [ right_corner_x ,-tot_y/2],
+                [ right_corner_x ,tot_y/2]]);
+    }
+  
+     module center_space_2D(){
+          //From top left corner counter clock wise
+          corner_l = hinge_l/2;
+          polygon([ [slender_0_x - w2/2 - 1.5*output_travel + corner_l,  slender_y ],
+                    [slender_0_x - w2/2 - 1.5*output_travel,  slender_y - corner_l],
+                    [slender_0_x - w2/2 - 1.5*output_travel, -slender_y + corner_l],
+                    [slender_0_x - w2/2 - 1.5*output_travel + corner_l, -slender_y ],
+                    [rod_body_x - corner_l, -slender_y],
+                    [rod_body_x , -slender_y + corner_l],
+                    [rod_body_x,slender_y  - corner_l],
+                    [rod_body_x - corner_l,slender_y]]);
+     }   
+     
+    //Assemble the 2D frame options 
+    module frame_2D(){
+        //Plain frame, all filled 
+         difference(){
+                union(){
+                    outer_perimeter_2D();
+                    translate([x_offset,0,0])anchor_cross_2D(x_hole = span_x/2, y_hole = span_y/2);
+                    }
+                  offset(r=p0) center_space_2D();
+                  offset(r=p0) projection(cut=false) translate([lever_axis_x, 0, 0]) lever_negative();
+                  projection(cut=false) translate([center_body_d/2 + w2 + rod_l/2 + hinge_l/2,0,0])cube([rod_l,rod_w + rod_clearance,frame_h + p0],center = true);
+                  translate([right_corner_x - (nut_h + frame_t)/2, l0 - l_gate,0 ]) projection(cut=false)  screw_gate_negative();
+            }       
+    }
+     
+    module iso_frame_2D(){
+        //Isogrid frame  
+        fill_outline_with_isogrid(perimeter_t =1.4,approx_size = inter_hole_dx,cell_size = 14)frame_2D();
+    }
+    
+    // Assemble it in 3D 
+    module support_bridge(){
+        //Connects the two sides across the bridge to make the frame stiffer
+     // from top left corner, counter clock wise
+       added_h = min(support_h,1);
+       
+       translate([0,0,-added_h])linear_extrude(height= added_h,center = false, convexity = 2){
+            polygon([ [0,rod_w/2 + rod_clearance/2 + 2],
+                      [0,-(rod_w/2 + rod_clearance/2 + 2)],
+                      [rod_l - hinge_l,-(rod_w/2 + rod_clearance/2 + 2)],
+                      [rod_l - hinge_l,+(rod_w/2 + rod_clearance/2 + 2)]
+                      ]);
+        }
+       //45 deg chamfer
+      translate([0,rod_w/2 + rod_clearance/2 + 2,0]) rotate([0,90,0]) cylinder(r=added_h,h = rod_l - hinge_l,  center =false, $fn = 4);
+      translate([0,-(rod_w/2 + rod_clearance/2 + 2),0]) rotate([0,90,0]) cylinder(r=added_h,h = rod_l - hinge_l,  center =false, $fn = 4);
+    } 
+   
+    
+    difference(){
+        union(){
+            //linear_extrude(frame_h,center = true,convexity = 4) iso_frame_2D(); 
+            linear_extrude(frame_h,center = true,convexity = 4) frame_2D();
+            
+            //Extend the attachement points to the ground
+            translate([0,0, -support_h - frame_h/2 + p0 ]){
+                linear_extrude(support_h,center = false)difference(){
+                    translate([x_offset,0,0]) anchor_cross_2D(x_hole = span_x/2, y_hole = span_y/2);
+                    //offset(r= p0) center_space_2D();
+                    offset(r = -0.5)outer_perimeter_2D();
+                }
+            }
+            //Add bridge connection
+            translate([rod_body_x ,0,-frame_h/2+p0]) support_bridge();
+        }
+        linear_extrude(height= frame_h + p0,center = true, convexity = 2) center_space_2D();
+        translate([lever_axis_x, 0, 0]) lever_negative();        
+    }
+    translate([right_corner_x - (nut_h + frame_t)/2 +p0, l0 - l_gate,-p0 ]) screw_gate();       
+}
+
+module hinge(){
+    corner_filletted_hinge(t = hinge_t, r = hinge_r, l = hinge_l, h = h0);
+    //circular_hinge(t = hinge_t, l = hinge_l, h = h0);
+}
+
+module legend(){
+    linear_extrude(0.8,center = true,convexity =2) text("Travel:",size = text_size,halign="left", valign="top");
+    translate([0,-text_size*1.2,0])linear_extrude(0.8,center = true,convexity =2) text(str(output_travel,"mm"),size = text_size,halign="left",valign="top");
+}
+
+module corner_filletted_hinge(t = 0.8, r = 0.5, l = 10, h = 5){
+    // A slender body with rounded connections;
+    d1 = 2*r;
+    offset_y = (l - d1)/2;
+    offset_x = (t + d1)/2;
+
+    difference(){
+        cube(size=[t+2*r,l + 2*p0,h],center = true);
+
+        hull(){
+            translate([-offset_x,+offset_y,0]) cylinder(d=d1, h= 1.2*h,center = true);
+            translate([-offset_x,-offset_y,0]) cylinder(d=d1, h= 1.2*h,center = true);
+         }
+
+         hull(){
+            translate([+offset_x,+offset_y,0]) cylinder(d=d1, h= 1.2*h,center = true);
+            translate([+offset_x,-offset_y,0]) cylinder(d=d1, h= 1.2*h,center = true);
+         }
+    }
+}
+
+//!circular_hinge();
+module circular_hinge(t = 0.8, l = 10, h = 5){
+    //Two half circles
+    d1 = l;
+    offset_x = (t + d1)/2;
+    difference(){
+        cube(size=[t+l,l + 2*p0,h],center = true);
+
+        translate([-offset_x,0,0]) cylinder(d = d1, h=1.2*h, center = true);
+        translate([+offset_x,0,0]) cylinder(d = d1, h=1.2*h, center = true);
+    }
+}
+
+
+module fill_outline_with_isogrid(perimeter_t = 1,approx_size = 50,cell_size = 6){
+    //Assumes figure is centered
+     difference(){
+        children();
+        offset(r=perimeter_t) offset(r=-2*perimeter_t) children();
+    }
+    intersection(){
+        children();
+        isogrid_2D(side_l= approx_size,t = perimeter_t,cell_side_l = cell_size);
+    }
+}
+
+module isogrid_2D(side_l =40,t=1,cell_side_l= 8){
+    //Draws a 2D isogrid
+    step = cell_side_l*cos(30);
+    n_elements = round(side_l/cell_side_l);
+    
+    module parallel_lines(){
+       for(i = [0:n_elements*2]){
+            translate([(i-n_elements)*step,0,0])square([t,2*side_l],center = true);     
+        }
+    }
+    rotate([0,0,+30]) parallel_lines();
+    rotate([0,0,-30]) parallel_lines();
+    rotate([0,0,90])  parallel_lines();
+}// === Internal State Parameters
+
+// my Label fun value
+blabla = 10 // [3:8]
+    </textarea>
     <br />
     <button onclick="parse_text_as_scad()">Parse</button>
     <button onclick="generate_param_string()">Generate parameter string</button>
