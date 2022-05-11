@@ -6,16 +6,20 @@ class DdbDiv {
         this.values = []
         this.options = []
         this.types = []
+        this.valTypes = []
+        this.optionsTypes = []
 
         this.default = ''
     }
 
-    addElement(varName_, comment_, value_, options_, type_) {
+    addElement(varName_, comment_, value_, options_, type_, valType_, optionsType_) {
         this.varNames.push(varName_)
         this.comments.push(comment_)
         this.values.push(value_)
         this.options.push(options_)
         this.types.push(type_)
+        this.valTypes.push(valType_)
+        this.optionsTypes.push(optionsType_)
     }
 
     show() {
@@ -30,7 +34,7 @@ class DdbDiv {
                 switch (this.types[i]) {
                     case 'bool':
                         html += '<input id="' + IDstring + '" type="checkbox"'
-                        if (this.values[i][0] == 'true') html += ' checked'
+                        if (this.values[i][j] == true) html += ' checked'
                         html += ' style="' + STYLE + '"></input>'
                         break
                     case 'number':
@@ -38,22 +42,22 @@ class DdbDiv {
                         break
                     case 'max':
                         max = this.options[i][0]
-                        value = this.values[i][0]
+                        value = this.values[i][j]
                         html += '<input id="' + IDstring + '" type="range" min="0" max="' + max + '" value="' + value + '" oninput="document.getElementById(\'' + IDstring + '_text\').value = document.getElementById(\'' + IDstring + '\').value" />'
-                        html += '<input id="' + IDstring + '_text" type="number" min="0" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
+                        html += '<input id="' + IDstring + '_text" type="number" min="0" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][j]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
                         break
                     case 'range':
                         min = this.options[i][0]
                         max = this.options[i][1]
-                        value = this.values[i][0]
+                        value = this.values[i][j]
                         html += '<input id="' + IDstring + '" type="range" min="' + min + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
-                        html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][0]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
+                        html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + getStep(this.values[i][j]) + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
                         break
                     case 'rangestep':
                         min = this.options[i][0]
                         step = this.options[i][1]
                         max = this.options[i][2]
-                        value = this.values[i][0]
+                        value = this.values[i][j]
                         html += '<input id="' + IDstring + '" type="range" min="' + min + '" step="' + step + '" max="' + max + '" value="' + value + '" oninput=\'document.getElementById("' + IDstring + '_text").value = document.getElementById("' + IDstring + '").value\' />'
                         html += '<input id="' + IDstring + '_text" type="number" min="' + min + '" max="' + max + '" value="' + value + '" step="' + step + '" oninput=\'document.getElementById("' + IDstring + '").value = document.getElementById("' + IDstring + '_text").value\' style="' + STYLE + '"/>'
                         break
@@ -61,7 +65,7 @@ class DdbDiv {
                         html += '<input id="' + IDstring + '" type="text" value=' + this.values[i][j] + ' step="' + getStep(this.values[i][j]) + '" style="' + STYLE + '"></input>'
                         break
                     case 'length':
-                        html += '<input id="' + IDstring + '" value="' + this.values[i][0] + '" type="text" maxlength="' + this.options[i][0] + '" />'
+                        html += '<input id="' + IDstring + '" value="' + this.values[i][j] + '" type="text" maxlength="' + this.options[i][0] + '" />'
                         break
                     case 'combobox':
                         html += '<select id="' + IDstring + '" style="' + STYLE + '">'
@@ -93,8 +97,10 @@ class DdbDiv {
 STYLE = 'width: 4em; margin-left: 1em; display: inline;'
 
 ddbList = []
+ddbListOld = []
 shouldSkip = false
 id = 0
+values = []
 
 function parse_text_as_scad(text) {
     const ddbOpenRe = /^[ 	]*\/\*[	 ]*\[/
@@ -106,9 +112,11 @@ function parse_text_as_scad(text) {
     let value = []
     let optionsType = ''
     let options = []
+	
+	let shouldSkip_ = false
+	
+	ddbListOld = ddbList
     ddbList = []
-
-    let shouldSkip_ = false
 
     text.split('\n').forEach((line) => {
         if (shouldSkip_) return
@@ -126,39 +134,13 @@ function parse_text_as_scad(text) {
                     if (optionsType != 'invalid') {
                         if (comment == '' && optionsType == 'comment') comment = options[0]
 
-                        let validDeclaration = true
-                        let list = optionsType.includes('list')
-                        let valType_ = valType.replace('list_', '')
-                        let optionsType_ = optionsType.replace('list_', '')
+                        typeValid =  get_type_valid(valType, optionsType)
 
-                        switch (optionsType_) {
-                            case 'empty': break
-                            case 'comment': break
-                            case 'number':
-                                validDeclaration = ((list == true && valType_ == 'number') || (valType_ == 'string'))
-                                if (valType_ == 'string') valType_ = 'length'
-                                break
-                            case 'expression': case 'string':
-                                validDeclaration = (list == true && valType_ == 'string')
-                                break
-                            case 'labelled':
-                                validDeclaration = (valType_ == 'string')
-                                valType_ = optionsType_
-                                break
-                            case 'bool': break
-                            case 'max': case 'range': case 'rangestep':
-                                validDeclaration = (valType_ == 'number')
-                                valType_ = optionsType_
-                                break
-                            default: validDeclaration = false
-                        }
-
-                        if (optionsType.includes('list')) valType_ = 'combobox'
-
-                        if (validDeclaration) {
-                            pushToDDB(varName, comment, value, options, valType_)
-                            // console.log(valType + ': ' + varName + ' = ' + value + '; // ' + options + ' (' + optionsType + ')')
-                        } else showError('Invalid combination of parameter and options: ' + valType + ' can be used together with ' + optionsType + '\n\n' + line)
+                        if (typeValid[1]) {
+							value = getValFromOldDdbList(varName, value, valType, optionsType)
+                            pushToDDB(varName, comment, value, options, typeValid[0], valType, optionsType)
+                            console.log(typeValid[0] + ': ' + varName + ' = ' + value + '; // ' + options + ' (' + optionsType + ')')
+                        } else showError('Invalid combination of parameter and options: ' + valType + ' can\'t be used together with ' + optionsType + '\n\n' + line)
                     }
                 }
                 comment = ''
@@ -174,6 +156,48 @@ function parse_text_as_scad(text) {
     document.getElementById("container").innerHTML = ''
     id = 0
     for (I = 0; I < ddbList.length; I++) ddbList[I].show()
+}
+
+function getValFromOldDdbList(varName, value, valType, optionsType){
+	for(i = 0; i < ddbListOld.length; i++){
+		for(j = 0; j < ddbListOld[i].varNames.length; j++){
+			if(ddbListOld[i].varNames[j] == varName && ddbListOld[i].valTypes[j] == valType && ddbListOld[i].optionsTypes[j] == optionsType) return ddbListOld[i].values[j]
+		}
+	}
+	
+	return value
+}
+
+function get_type_valid(valType, optionsType){
+	let list = optionsType.includes('list')
+	let valType_ = valType.replace('list_', '')
+	let optionsType_ = optionsType.replace('list_', '')
+	let validDeclaration = true
+
+	switch (optionsType_) {
+		case 'empty': break
+		case 'comment': break
+		case 'number':
+			validDeclaration = ((list == true && valType_ == 'number') || (valType_ == 'string'))
+			if (valType_ == 'string') valType_ = 'length'
+			break
+		case 'expression': case 'string':
+			validDeclaration = (list == true && valType_ == 'string')
+			break
+		case 'labelled':
+			validDeclaration = (valType_ == 'string')
+			valType_ = optionsType_
+			break
+		case 'bool': break
+		case 'max': case 'range': case 'rangestep':
+			validDeclaration = (valType_ == 'number')
+			valType_ = optionsType_
+			break
+		default: validDeclaration = false
+	}
+	if (optionsType.includes('list')) valType_ = 'combobox'
+	
+	return [valType_, validDeclaration]
 }
 
 function detect_line_type(line) {
@@ -341,9 +365,9 @@ function showError(msg) {
     shouldSkip = true;
 }
 
-function pushToDDB(varName, comment, value, options, type) {
+function pushToDDB(varName, comment, value, options, type, valType, optionsType) {
     if (ddbList.length == 0) ddbList.push(new DdbDiv(''))
-    ddbList[ddbList.length - 1].addElement(varName, comment, value, options, type)
+    ddbList[ddbList.length - 1].addElement(varName, comment, value, options, type, valType, optionsType)
 }
 
 function getStep(val) {
@@ -354,8 +378,6 @@ function getStep(val) {
 }
 
 async function generate_param_string() {
-    let parameterSet = { "parameterSets": { "FirstSet": {} } }
-
     let IDString = ''
     let valString = ''
     let tmp = ''
@@ -368,28 +390,42 @@ async function generate_param_string() {
         for (let j = 0; j < types.length; j++) {
             valString += varNames[j] + ' = '
             if (values[j].length > 1) valString += '['
-            if (types[j] == 'checkbox') valString += document.getElementById(id + '_input_0').checked
+            if (types[j] == 'bool'){
+				vals = []
+				for(k = 0; k < values[j].length; k++){
+					valString += document.getElementById(id + '_input_' + k).checked
+					if (k != values[j].length - 1) valString += ', '
+					vals.push(document.getElementById(id + '_input_' + k).checked)
+				}
+				setDdbListValue(varNames[j], vals)
+			}
             else if (types[j] == 'labelled') {
+				vals = []
                 for (let k = 0; k < values[j].length; k++) {
                     IDString = id + '_input_' + k
                     tmp = document.getElementById(IDString).value
                     for (let l = 0; l < options[j].length; l++) {
                         if (options[j][l][1] == tmp) {
                             valString += '"' + options[j][l][0] + '"'
+							vals.push(options[j][l][0])
                             break
                         }
                     }
                     if (k != values[j].length - 1) valString += ', '
                 }
+				setDdbListValue(varNames[j], vals)
             }
             else {
+				vals = []
                 for (let k = 0; k < values[j].length; k++) {
                     IDString = id + '_input_' + k
                     tmp = document.getElementById(IDString).value
+					vals.push(tmp)
                     if (isNaN(tmp)) valString += '"' + tmp + '"'
                     else valString += tmp
                     if (k != values[j].length - 1) valString += ', '
                 }
+				setDdbListValue(varNames[j], vals)
             }
             if (values[j].length > 1) valString += ']'
             valString += ';\n'
@@ -400,4 +436,11 @@ async function generate_param_string() {
     //alert(valString);
     console.log(valString);
     return valString;
+}
+
+function setDdbListValue(varName, value){
+	for(I = 0; I < ddbList.length; I++)
+		for(J = 0; J < ddbList[I].varNames.length; J++)
+			if(ddbList[I].varNames[J] == varName)
+				ddbList[I].values[J] = value
 }
