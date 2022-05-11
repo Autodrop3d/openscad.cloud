@@ -581,20 +581,21 @@
             }
             await updateFileSelector("main.scad");
             //await showFileInEditor();
-            await require(["vs/editor/editor.main"], async () => {
-                await registerOpenSCADLanguage();
-                window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
-                    value: virtualFileSystem[0].txt,
-                    language: 'openscad',
-                    theme: 'vs-dark',
-                });
-            });
-        } catch (e){
+
+        } catch (e) {
+            virtualFileSystem[0].txt = "";
             alert("unable to load model from server");
         }
 
 
-
+        await require(["vs/editor/editor.main"], async () => {
+            await registerOpenSCADLanguage();
+            window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
+                value: virtualFileSystem[0].txt,
+                language: 'openscad',
+                theme: 'vs-dark',
+            });
+        });
 
 
         window.firstRenderDone == true;
