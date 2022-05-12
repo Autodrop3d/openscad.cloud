@@ -39,7 +39,7 @@
 
 <div id="configurator" style="top:10%;right:50%;left:10%;bottom:10%;position: absolute;z-index: 1000; background-color: rgb(52, 55, 55);overflow-y: scroll;">
     <span><button onclick="run_Configurator()">Generate </button> <button onclick="$('#configurator').hide()" style="float: right; color: red;">X</button></span>
-    
+
     <div id="container"></div>
 </div>
 
@@ -568,20 +568,26 @@
     async function setUpMonacoEditor() {
         await require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
 
-
-
-        let codeFromServerSide = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
-            id: openPartID, rev: openPartRev
-        });
-        if (codeFromServerSide !== undefined) {
-            try {
-                virtualFileSystem = await JSON.parse(codeFromServerSide);
-            } catch (e) {
-                virtualFileSystem[0].txt = codeFromServerSide;
+        try {
+            let codeFromServerSide = await doAjax('../api/cadFiles/returnCadModelOpenSCAD', {
+                id: openPartID, rev: openPartRev
+            });
+            if (codeFromServerSide !== undefined) {
+                try {
+                    virtualFileSystem = await JSON.parse(codeFromServerSide);
+                } catch (e) {
+                    virtualFileSystem[0].txt = codeFromServerSide;
+                }
             }
+            await updateFileSelector("main.scad");
+            //await showFileInEditor();
+
+        } catch (e) {
+            virtualFileSystem[0].txt = "";
+            alert("unable to load model from server");
         }
-        await updateFileSelector("main.scad");
-        //await showFileInEditor();
+
+
         await require(["vs/editor/editor.main"], async () => {
             await registerOpenSCADLanguage();
             window.editor = await monaco.editor.create(document.getElementById('monacoEditor'), {
@@ -590,6 +596,7 @@
                 theme: 'vs-dark',
             });
         });
+
 
         window.firstRenderDone == true;
     }
@@ -669,7 +676,7 @@
         await $('#configurator').show();
         await updateFileSelector("main.scad");
 
-        
+
         await parse_text_as_scad(await window.editor.getValue())
 
         //document.getElementById("runOpenSCAD").click();
