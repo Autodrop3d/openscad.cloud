@@ -203,7 +203,7 @@ function get_type_valid(valType, optionsType){
 function detect_line_type(line) {
     const ddbRe = /^[ 	]*\/\*[	 ]*\[.*\][	 ]*\*\//
     const commentRe = /^[ 	]*\/\/[ 	]*/
-    const declarationRe = /^[ 	]*\$?([a-zA-Z_]+[0-9]*)+ *= *.+;/
+    const declarationRe = /^[ 	]*\$?([a-zA-Z_]+[0-9]*)+[	 ]*=[	 ]*.+;/
     const moduleRe = /^[	 ]*module/
 
     line_ = []
@@ -259,8 +259,8 @@ function get_value_type(value_) {
     const boolRe = /^[	 ]*(true|false)[	 ]*$/
     const expressionRe = /^[	 ]*[^"].*[a-zA-Z_\*\+]+.*[^"][	 ]*$/
     const labelledRe = /\[([^:\[\],]*:[^:\[\],]*,[	 ]*)+([^:\[\],]*:[^:\[\],]*[	 ]*)?\]$/
-    const rangeRe = /^[	 ]*\[([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*)\]$/
-    const rangestepRe = /^[	 ]*\[([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*)\]$/
+    const rangeRe = /^[	 ]*\[([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*)\]$/
+    const rangestepRe = /^[	 ]*\[([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*)\]$/
     const vddvRe = /^[	 ]*[^:\[\],]*:[^:\[\],]*[	 ]*$/
 
     if (!isNaN(value_)) return 'number'
@@ -294,13 +294,13 @@ function extract_value(value_, valType) {
         case 'bool': return value_.replace(/^[	 ]*/, '').replace(/[	 ]*$/, '') == 'true'
         case 'label': return [value_.replace(/:[^:\[\],]*[	 ]*$/, ''), value_.replace(/^[	 ]*[^:\[\],]*:/, '')]
         case 'range': return [
-            parseFloat(value_.replace(/^[	 ]*\[[	 ]*/, '').replace(/:[	 ]*-?[0-9]*(.[0-9]*)?[	 ]*\]$/, '')),
-            parseFloat(value_.replace(/[	 ]*\[[	 ]*-?[0-9]*(.[0-9]*)?[	 ]*:/, '').replace(/[	 ]*\]$/, ''))
+            parseFloat(value_.replace(/^[	 ]*\[[	 ]*/, '').replace(/:[	 ]*((-?)|(\+?))[0-9]*(.[0-9]*)?[	 ]*\]$/, '')),
+            parseFloat(value_.replace(/[	 ]*\[[	 ]*((-?)|(\+?))[0-9]*(.[0-9]*)?[	 ]*:/, '').replace(/[	 ]*\]$/, ''))
         ]
         case 'rangestep': return [
-            parseFloat(value_.replace(/^[	 ]*\[/, '').replace(/:([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*)\]$/, '')),
-            parseFloat(value_.replace(/^[	 ]*\[([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):/, '').replace(/:([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*)\]$/, '')),
-            parseFloat(value_.replace(/^[	 ]*\[([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*-?[0-9]*(\.[0-9]*)?[	 ]*):/, '').replace(/[	 ]*\]$/, ''))
+            parseFloat(value_.replace(/^[	 ]*\[/, '').replace(/:([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*)\]$/, '')),
+            parseFloat(value_.replace(/^[	 ]*\[([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):/, '').replace(/:([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*)\]$/, '')),
+            parseFloat(value_.replace(/^[	 ]*\[([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):([	 ]*((-?)|(\+?))[0-9]*(\.[0-9]*)?[	 ]*):/, '').replace(/[	 ]*\]$/, ''))
         ]
         default: return value_;
     }
