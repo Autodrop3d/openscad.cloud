@@ -1,4 +1,4 @@
-
+// this file was copped in its entirety from https://github.com/ochafik/openscad-wasm/blob/792b1e3d147d551bcf2c3aaed16a17638fd1e7c2/example/www/openscad-editor-config.js
 // https://microsoft.github.io/monaco-editor/playground.html#extending-language-services-custom-languages
 export async function registerOpenSCADLanguage() {
     const [jsLanguage] = monaco.languages.getLanguages().filter(l => l.id === 'javascript');
