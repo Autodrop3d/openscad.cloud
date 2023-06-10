@@ -182,9 +182,28 @@
 <a href="https://github.com/DSchroer/openscad-wasm" target="_blank">DSchroer: OpenSCAD wasm port</a>
 <a href="https://github.com/ochafik/openscad-wasm/blob/editor-ochafik.com/example/www/openscad-editor-config.js" target="_blank">ochafik: Code highlighting </a>  
 `
+
+
     function param(name) {
         return (location.search.split(name + '=')[1] || '').split('&')[0];
     }
+
+
+    async function storeToken() {
+        let myTokenForCadPassthroug = await atob(await param("token"));
+
+        if (myTokenForCadPassthroug !== "") {
+            await localStorage.setItem("userKey", myTokenForCadPassthroug);
+            //window.close();
+        } else {
+            alert("Please login or create a user account \n Click Login again from OpenSCAD.cloud after account created or logged in.");
+            //window.location.href = "https://autodrop.cloud";
+        }
+
+    }
+
+    storeToken();
+
 
 
     openPartID = param("openPartID");
